@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env.yaml
+
+# Datasets and caches (keep the generator modules in data/*.py under version control)
+data/*
+!data/*.py
+
+# Experiment outputs
+outputs/
+wandb/
+*.log
+log*.txt
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store

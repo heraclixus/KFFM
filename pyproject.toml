@@ -1,0 +1,40 @@
+[project]
+name = "functional_fm_OT"
+version = "0.1.0"
+description = "Kernel Functional Flow Matching (kFFM): functional flow matching with kernel optimal transport coupling"
+authors = [
+  { name = "Fred Xu", email = "fredxu@cs.ucla.edu" },
+  { name = "Thomas Markovich", email = "tmarkovich@squareup.com" },
+  { name = "Barbora Barancikova" },
+  { name = "Yizhou Sun", email = "yzsun@cs.ucla.edu" },
+]
+requires-python = ">=3.9,<3.13"
+
+dependencies = [
+  "torch==2.5.1",
+  "torchvision==0.20.1",
+  "torchaudio==2.5.1",
+  "h5py",
+  "gpytorch",
+  "POT",
+  "neuraloperator",
+  "gitpython",
+  "wandb",
+  "ray[tune]",
+  "optuna",
+  "numpy",
+  "scipy",
+  "pandas",
+  "matplotlib",
+  "scikit-learn",
+  "toml",
+  "tqdm",
+  "torchsde",
+  "torchdiffeq",
+  "networkx"
+]
+
+[tool.uv.pip]
+index-url = "https://download.pytorch.org/whl/cu124"
+extra-index-url = ["https://pypi.org/simple", "https://data.pyg.org/whl/torch-2.5.1+cu124.html", "https://data.pyg.org/whl/torch-2.5.1+cu124.html"]
+

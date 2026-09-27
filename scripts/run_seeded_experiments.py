@@ -172,6 +172,8 @@ CFM_RBF_OT_SIGMA_VARIANTS = {
 
 # Reg-sweep variants (sigma from dataset-specific or default, vary ot_reg)
 CFM_RBF_OT_REG_VARIANTS = {
+    'cfm_rbf_ot_r0001': 0.001,
+    'cfm_rbf_ot_r0005': 0.005,
     'cfm_rbf_ot_r001': 0.01,
     'cfm_rbf_ot_r005': 0.05,
     'cfm_rbf_ot_r05':  0.5,

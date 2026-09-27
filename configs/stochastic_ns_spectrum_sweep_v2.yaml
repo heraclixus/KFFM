@@ -1,0 +1,576 @@
+# Stochastic Navier-Stokes Expanded Sweep: Focus on Spectrum Distribution
+#
+# Current Status:
+# - DDPM significantly better on spectrum_mse (432 vs ~50,000 for k-FFM)
+# - GP kernel length tuning shows promise (gp_kl0.05, gp_kl0.1 explored)
+# - Lower regularization (0.01-0.05) seems better for this dataset
+#
+# This sweep expands exploration of:
+# - Finer GP kernel length grid
+# - RBF sigma variations
+# - Lower regularization values
+# - GP + OT combinations
+# - FNO modes with best settings
+
+# =============================================================================
+# SECTION 1: GP KERNEL LENGTH SWEEP (Euclidean, no OT - baseline)
+# =============================================================================
+
+gp_kl0.03:
+  use_ot: false
+  gp_kernel_length: 0.03
+  gp_kernel_variance: 1.0
+
+gp_kl0.04:
+  use_ot: false
+  gp_kernel_length: 0.04
+  gp_kernel_variance: 1.0
+
+gp_kl0.06:
+  use_ot: false
+  gp_kernel_length: 0.06
+  gp_kernel_variance: 1.0
+
+gp_kl0.07:
+  use_ot: false
+  gp_kernel_length: 0.07
+  gp_kernel_variance: 1.0
+
+gp_kl0.08:
+  use_ot: false
+  gp_kernel_length: 0.08
+  gp_kernel_variance: 1.0
+
+gp_kl0.15:
+  use_ot: false
+  gp_kernel_length: 0.15
+  gp_kernel_variance: 1.0
+
+gp_kl0.2:
+  use_ot: false
+  gp_kernel_length: 0.2
+  gp_kernel_variance: 1.0
+
+# =============================================================================
+# SECTION 2: GP + EUCLIDEAN OT (various reg values)
+# =============================================================================
+
+gp0.05_euc_reg0.01:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.01
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+
+gp0.05_euc_reg0.02:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.02
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+
+gp0.05_euc_reg0.03:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.03
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+
+gp0.05_euc_reg0.1:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+
+gp0.05_euc_reg0.2:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.2
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+
+gp0.05_euc_reg0.3:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.3
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+
+gp0.05_euc_reg0.5:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.5
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+
+# Different GP lengths with reg=0.05
+gp0.03_euc_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.03
+  gp_kernel_variance: 1.0
+
+gp0.07_euc_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.07
+  gp_kernel_variance: 1.0
+
+gp0.1_euc_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.1
+  gp_kernel_variance: 1.0
+
+gp0.1_euc_reg0.1:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.1
+  gp_kernel_variance: 1.0
+
+gp0.15_euc_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.15
+  gp_kernel_variance: 1.0
+
+# =============================================================================
+# SECTION 3: RBF SIGMA SWEEP (with low reg)
+# =============================================================================
+
+rbf_sigma2.0_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 2.0
+
+rbf_sigma3.0_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 3.0
+
+rbf_sigma7.0_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 7.0
+
+rbf_sigma10.0_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 10.0
+
+rbf_sigma15.0_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 15.0
+
+rbf_sigma30.0_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 30.0
+
+rbf_sigma70.0_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 70.0
+
+rbf_sigma100.0_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 100.0
+
+# RBF with very low reg
+rbf_sigma5.0_reg0.01:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.01
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 5.0
+
+rbf_sigma10.0_reg0.01:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.01
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 10.0
+
+rbf_sigma20.0_reg0.01:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.01
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 20.0
+
+# =============================================================================
+# SECTION 4: GP + RBF COMBINATIONS
+# =============================================================================
+
+gp0.05_rbf_sigma5_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 5.0
+
+gp0.05_rbf_sigma10_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 10.0
+
+gp0.05_rbf_sigma20_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 20.0
+
+gp0.05_rbf_sigma30_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 30.0
+
+gp0.1_rbf_sigma10_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.1
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 10.0
+
+gp0.1_rbf_sigma20_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.1
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 20.0
+
+gp0.1_rbf_sigma30_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.1
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 30.0
+
+# Low reg combinations
+gp0.05_rbf_sigma10_reg0.01:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.01
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 10.0
+
+gp0.05_rbf_sigma20_reg0.01:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.01
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 20.0
+
+# =============================================================================
+# SECTION 5: EXACT OT (no Sinkhorn regularization)
+# =============================================================================
+
+gp0.05_euc_exact:
+  use_ot: true
+  ot_method: exact
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+
+gp0.1_euc_exact:
+  use_ot: true
+  ot_method: exact
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.1
+  gp_kernel_variance: 1.0
+
+gp0.05_rbf_sigma10_exact:
+  use_ot: true
+  ot_method: exact
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 10.0
+
+gp0.05_rbf_sigma20_exact:
+  use_ot: true
+  ot_method: exact
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 20.0
+
+# =============================================================================
+# SECTION 6: GP VARIANCE SWEEP
+# =============================================================================
+
+gp0.05_var0.5_euc:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 0.5
+
+gp0.05_var2.0_euc:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 2.0
+
+gp0.05_var0.5_rbf:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 0.5
+  ot_kernel_params:
+    sigma: 10.0
+
+gp0.05_var2.0_rbf:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 2.0
+  ot_kernel_params:
+    sigma: 10.0
+
+# =============================================================================
+# SECTION 7: FNO MODES WITH BEST GP SETTINGS
+# =============================================================================
+
+gp0.05_modes20_euc:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  fno_modes: 20
+
+gp0.05_modes24_euc:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  fno_modes: 24
+
+gp0.05_modes28_euc:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  fno_modes: 28
+
+gp0.05_modes32_euc:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  fno_modes: 32
+
+gp0.1_modes24_euc:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.1
+  gp_kernel_variance: 1.0
+  fno_modes: 24
+
+# FNO modes with RBF
+gp0.05_modes24_rbf:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  fno_modes: 24
+  ot_kernel_params:
+    sigma: 10.0
+
+gp0.05_modes32_rbf:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  fno_modes: 32
+  ot_kernel_params:
+    sigma: 10.0
+
+# =============================================================================
+# SECTION 8: VERY LOW REGULARIZATION (might help for this dataset)
+# =============================================================================
+
+euc_reg0.005:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.005
+  ot_kernel: euclidean
+  ot_coupling: sample
+
+gp0.05_euc_reg0.005:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.005
+  ot_kernel: euclidean
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+
+rbf_sigma10_reg0.005:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.005
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 10.0
+
+gp0.05_rbf_sigma10_reg0.005:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.005
+  ot_kernel: rbf
+  ot_coupling: sample
+  gp_kernel_length: 0.05
+  gp_kernel_variance: 1.0
+  ot_kernel_params:
+    sigma: 10.0

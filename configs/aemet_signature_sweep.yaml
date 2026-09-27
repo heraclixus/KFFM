@@ -1,0 +1,685 @@
+# =============================================================================
+# AEMET Dataset: Signature Kernel Hyperparameter Sweep
+# 
+# Dataset characteristics:
+# - 73 Spanish weather stations (small dataset, repeated 50x for training)
+# - 365 time points (daily temperatures, full year)
+# - Strong seasonal pattern (summer peak ~day 200)
+# - Smooth temporal structure (temperatures don't jump drastically)
+# - Key metrics: seasonal_mse, autocorrelation_mse, mean_mse
+#
+# Signature kernel considerations for AEMET:
+# - 365 points is moderately long → max_seq_len=128 captures key patterns
+# - Seasonal patterns suggest time_aug is important
+# - dyadic_order limited to 0-2 for computational efficiency
+# - Lead-lag may help with autocorrelation but less critical than rough data
+# - Static kernel sigma affects local vs global sensitivity
+# =============================================================================
+
+# =============================================================================
+# SECTION 1: BEST KNOWN NON-SIGNATURE BASELINES
+# =============================================================================
+
+independent:
+  use_ot: false
+
+gaussian_ot:
+  use_ot: true
+  ot_method: gaussian
+  ot_reg: 0.1  # Higher reg for 365-dim stability
+  ot_coupling: barycentric
+
+euclidean_exact:
+  use_ot: true
+  ot_method: exact
+  ot_kernel: euclidean
+  ot_coupling: sample
+
+euclidean_sinkhorn_reg0.1:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: euclidean
+  ot_coupling: sample
+
+rbf_sinkhorn_reg0.1:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 5.0
+
+# =============================================================================
+# SECTION 2: SIGNATURE KERNEL - BASELINE & MAX_SEQ_LEN SWEEP
+# =============================================================================
+
+# Baseline signature config (current AEMET default)
+sig_baseline:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 64
+    max_batch: 32
+
+# Higher resolution (captures more of 365 points)
+sig_maxlen128:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_maxlen256:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 256
+    max_batch: 8
+
+# =============================================================================
+# SECTION 3: DYADIC ORDER SWEEP
+# Orders 0-2 for computational efficiency
+# =============================================================================
+
+sig_order0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 0
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_order1:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_order2:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# =============================================================================
+# SECTION 4: LEAD-LAG AUGMENTATION
+# Captures lagged dependencies - important for autocorrelation
+# =============================================================================
+
+sig_leadlag_order0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 0
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_leadlag_order1:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_leadlag_order2:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# =============================================================================
+# SECTION 5: STATIC KERNEL SIGMA SWEEP
+# Affects sensitivity to local increments in the path
+# =============================================================================
+
+sig_sigma0.1:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 0.1  # Very local
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_sigma0.5:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 0.5
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_sigma2.0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 2.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_sigma5.0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 5.0  # More global
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_sigma10.0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 10.0  # Very global (smooth data)
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# =============================================================================
+# SECTION 6: SINKHORN REGULARIZATION SWEEP
+# =============================================================================
+
+sig_reg0.01:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.01
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_reg0.5:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.5
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_reg1.0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 1.0
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_reg2.0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 2.0
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# =============================================================================
+# SECTION 7: PREPROCESSING ABLATIONS
+# =============================================================================
+
+sig_no_time_aug:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: false  # No time coordinate
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_no_normalize:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: false  # No kernel normalization
+    max_seq_len: 128
+    max_batch: 16
+
+sig_no_basepoint:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: false  # No basepoint
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# Minimal preprocessing
+sig_minimal:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: false
+    lead_lag: false
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: false
+    normalize: false
+    max_seq_len: 128
+    max_batch: 16
+
+# =============================================================================
+# SECTION 8: COMBINED CONFIGURATIONS (PROMISING COMBOS)
+# =============================================================================
+
+# Lead-lag + optimal sigma (for autocorrelation)
+sig_leadlag_order2_sigma2.0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 2.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# Order 2 + lower regularization (more precise OT)
+sig_order2_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# Lead-lag + lower regularization
+sig_leadlag_order2_reg0.05:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# Higher resolution + lead-lag (for seasonal patterns)
+sig_leadlag_order2_maxlen256:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 256
+    max_batch: 8
+
+# Best candidate for smooth seasonal data
+sig_order2_sigma5.0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 5.0  # Global for smooth seasonal
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_leadlag_order2_sigma5.0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 5.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# =============================================================================
+# SECTION 9: BARYCENTRIC COUPLING (alternative coupling strategy)
+# =============================================================================
+
+sig_barycentric:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: barycentric
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_leadlag_barycentric:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: barycentric
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# =============================================================================
+# SECTION 10: LINEAR STATIC KERNEL (alternative to RBF)
+# May be simpler/faster while maintaining effectiveness
+# =============================================================================
+
+sig_linear:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: linear
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_leadlag_linear:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: linear
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# =============================================================================
+# SUMMARY & RECOMMENDATIONS FOR AEMET
+# =============================================================================
+#
+# Expected best performers for AEMET (seasonal temperature data):
+#
+# 1. For autocorrelation_mse: sig_leadlag_order1 or sig_leadlag_order2
+#    - Lead-lag captures lagged temporal dependencies
+#
+# 2. For seasonal_mse: sig_order2_sigma5.0 or sig_leadlag_order2_sigma5.0
+#    - Order 2 + larger sigma captures smooth seasonal patterns
+#
+# 3. For mean_mse: sig_order1 or sig_order2 with sigma 1.0-2.0
+#    - Balanced configuration for overall quality
+#
+# Key hyperparameters to tune:
+# - dyadic_order: 0-2 (limited range for computational efficiency)
+# - lead_lag: true for autocorrelation
+# - static_kernel_sigma: 2.0-5.0 for smooth seasonal data
+# - max_seq_len: 128-256 to capture yearly patterns
+#
+# Memory considerations:
+# - AEMET has 365 time points (moderately long)
+# - Use batch_size_signature=64 and max_batch=16 or lower
+# =============================================================================

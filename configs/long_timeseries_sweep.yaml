@@ -1,0 +1,640 @@
+# =============================================================================
+# Long Time Series Sweep Config (rbergomi-long, heston-long)
+# 
+# For sequences with 1000 time steps (vs standard 100 steps)
+#
+# Key considerations for long sequences:
+# - Signature kernel max_seq_len must accommodate longer paths (or subsample)
+# - dyadic_order limited to 0-2 for computational efficiency
+# - Lead-lag augmentation captures lagged dependencies across longer horizons
+# - Memory constraints require smaller max_batch for signature kernel
+# - RBF/Euclidean kernels scale better but miss sequential structure
+#
+# Best known configs from standard datasets are included as baselines.
+# Focus is on signature kernel tuning for long sequences.
+# =============================================================================
+
+# =============================================================================
+# SECTION 1: BEST KNOWN BASELINES (non-signature kernels)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Independent (no OT) - baseline
+# -----------------------------------------------------------------------------
+independent:
+  use_ot: false
+
+# -----------------------------------------------------------------------------
+# Gaussian OT - Best for autocorrelation on standard rBergomi
+# Closed-form, fast, scales well to long sequences
+# -----------------------------------------------------------------------------
+gaussian_ot:
+  use_ot: true
+  ot_method: gaussian
+  ot_reg: 0.001
+  ot_coupling: barycentric
+
+gaussian_ot_reg1e-4:
+  use_ot: true
+  ot_method: gaussian
+  ot_reg: 0.0001
+  ot_coupling: barycentric
+
+# -----------------------------------------------------------------------------
+# Euclidean OT - Good general performance
+# -----------------------------------------------------------------------------
+euclidean_exact:
+  use_ot: true
+  ot_method: exact
+  ot_kernel: euclidean
+  ot_coupling: sample
+
+euclidean_sinkhorn_reg0.1:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: euclidean
+  ot_coupling: sample
+
+euclidean_sinkhorn_reg0.5:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.5
+  ot_kernel: euclidean
+  ot_coupling: sample
+
+# -----------------------------------------------------------------------------
+# RBF OT - Best spectrum metrics on standard datasets
+# -----------------------------------------------------------------------------
+rbf_exact_sigma5.0:
+  use_ot: true
+  ot_method: exact
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 5.0
+
+rbf_sinkhorn_reg0.1_sigma5.0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 5.0
+
+# Smaller sigma for longer sequences (more local)
+rbf_sinkhorn_reg0.1_sigma1.0:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 1.0
+
+rbf_sinkhorn_reg0.1_sigma0.5:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: rbf
+  ot_coupling: sample
+  ot_kernel_params:
+    sigma: 0.5
+
+# =============================================================================
+# SECTION 2: SIGNATURE KERNEL TUNING FOR LONG SEQUENCES
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 2.1 Baseline signature configs (adapted for long sequences)
+# max_seq_len=128 to handle longer sequences (will subsample if needed)
+# max_batch reduced for memory efficiency
+# -----------------------------------------------------------------------------
+sig_baseline_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128  # Increased for long sequences
+    max_batch: 16     # Reduced for memory
+
+# Higher max_seq_len variants
+sig_maxlen256:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 256  # Higher resolution
+    max_batch: 8      # Smaller batch for memory
+
+sig_maxlen512:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 512  # Very high resolution
+    max_batch: 4      # Minimal batch for memory
+
+# -----------------------------------------------------------------------------
+# 2.2 Dyadic Order Sweep
+# Orders 0-2 for computational efficiency
+# Order 0 = simplest, Order 2 = captures more hierarchical structure
+# -----------------------------------------------------------------------------
+sig_order0_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 0
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_order1_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_order2_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# -----------------------------------------------------------------------------
+# 2.3 Lead-Lag Augmentation
+# Critical for capturing lagged dependencies in long time series
+# Particularly important for rough volatility and mean-reverting processes
+# -----------------------------------------------------------------------------
+sig_leadlag_order0_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 0
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_leadlag_order1_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_leadlag_order2_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# -----------------------------------------------------------------------------
+# 2.4 Static Kernel Sigma Sweep
+# For long sequences, smaller sigma may capture local structure better
+# Larger sigma for global patterns
+# -----------------------------------------------------------------------------
+sig_sigma0.1_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 0.1  # Very local
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_sigma0.5_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 0.5
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_sigma2.0_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 2.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_sigma5.0_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 5.0  # More global
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# -----------------------------------------------------------------------------
+# 2.5 Sinkhorn Regularization Sweep
+# Lower reg = more precise OT, higher reg = more entropy
+# -----------------------------------------------------------------------------
+sig_reg0.01_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.01
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_reg0.05_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_reg0.5_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.5
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_reg1.0_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 1.0
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# -----------------------------------------------------------------------------
+# 2.6 Preprocessing Ablations
+# Test importance of each preprocessing step for long sequences
+# -----------------------------------------------------------------------------
+sig_no_time_aug_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: false  # No time augmentation
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_no_normalize_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: false  # No normalization
+    max_seq_len: 128
+    max_batch: 16
+
+sig_no_basepoint_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: false  # No basepoint
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# Only time augmentation (minimal preprocessing)
+sig_minimal_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 1
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: false
+    normalize: false
+    max_seq_len: 128
+    max_batch: 16
+
+# -----------------------------------------------------------------------------
+# 2.7 Combined Best Configurations
+# Combinations of promising settings for long sequences
+# -----------------------------------------------------------------------------
+sig_leadlag_order2_sigma0.5_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 0.5
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_leadlag_order2_reg0.05_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.05
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# High-resolution signature (more compute, potentially better)
+sig_highres_order2_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 256
+    max_batch: 8
+
+# -----------------------------------------------------------------------------
+# 2.8 Barycentric Coupling (alternative to sample coupling)
+# May provide smoother interpolations for long sequences
+# -----------------------------------------------------------------------------
+sig_barycentric_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: barycentric
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_leadlag_barycentric_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: barycentric
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: rbf
+    static_kernel_sigma: 1.0
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# =============================================================================
+# SECTION 3: LINEAR STATIC KERNEL (alternative to RBF)
+# =============================================================================
+sig_linear_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: false
+    dyadic_order: 2
+    static_kernel_type: linear
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+sig_leadlag_linear_long:
+  use_ot: true
+  ot_method: sinkhorn
+  ot_reg: 0.1
+  ot_kernel: signature
+  ot_coupling: sample
+  ot_kernel_params:
+    time_aug: true
+    lead_lag: true
+    dyadic_order: 2
+    static_kernel_type: linear
+    add_basepoint: true
+    normalize: true
+    max_seq_len: 128
+    max_batch: 16
+
+# =============================================================================
+# SECTION 4: DATASET-SPECIFIC RECOMMENDATIONS
+# =============================================================================
+# 
+# For rbergomi-long (rough volatility, H=0.1):
+# - Signature kernel with lead-lag should excel
+# - Lower dyadic_order (0-1) for very rough paths
+# - Smaller static_kernel_sigma for local roughness
+# - Recommended: sig_leadlag_order1_long or sig_leadlag_order2_sigma0.5_long
+#
+# For heston-long (mean-reverting, smoother):
+# - Higher dyadic_order (1-2) for smoother structure
+# - Lead-lag helps with mean reversion patterns
+# - Gaussian OT also strong baseline
+# - Recommended: sig_leadlag_order2_long or gaussian_ot
+# =============================================================================

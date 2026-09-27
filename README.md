@@ -69,7 +69,7 @@ Datasets are not distributed with the code. The loaders expect the following fil
 | Navier-Stokes, cost profiling only | `nsforcing_128/` | 128 x 128 |
 | Stochastic Ginzburg-Landau | `stochastic_ginzburg_landau.mat` | 129 points |
 
-Heston and rBergomi paths are simulated (100 time steps, 1000 for the long variants) and cached under
+Heston paths are simulated (100 time steps, 1000 for the long variant) and cached under
 `data/cache/`. The AEMET, gene expression and economy data come from the
 [FFM repository](https://github.com/GavinKerrigan/functional_flow_matching), the PDE data from
 [torchspde](https://github.com/crispitagorico/torchspde), and the turbulent Navier-Stokes data from the

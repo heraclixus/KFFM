@@ -31,8 +31,8 @@ from util.eval import compute_mmd_rbf, compute_sliced_wasserstein, compute_margi
 from run_seeded_experiments import (
     setup_kdv, setup_navier_stokes, setup_stochastic_kdv, setup_stochastic_ns,
     setup_aemet, setup_expr_genes, setup_economy,
-    setup_heston, setup_rbergomi,
-    setup_heston_long, setup_rbergomi_long,
+    setup_heston,
+    setup_heston_long,
     SPATIAL_2D_DATASETS,
 )
 
@@ -45,9 +45,7 @@ DATASET_SETUP = {
     "expr_genes": setup_expr_genes,
     "economy": setup_economy,
     "heston": setup_heston,
-    "rbergomi": setup_rbergomi,
     "heston-long": setup_heston_long,
-    "rbergomi-long": setup_rbergomi_long,
 }
 
 ALL_KERNELS = ["none", "euclidean", "rbf", "signature", "gaussian", "ddpm", "ncsn", "gano"]

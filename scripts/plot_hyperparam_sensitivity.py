@@ -33,7 +33,7 @@ import warnings
 
 # Dataset categories
 PDE_DATASETS = ["kdv", "navier_stokes", "stochastic_kdv", "stochastic_ns"]
-SEQUENCE_DATASETS = ["aemet", "expr_genes", "economy", "heston", "rbergomi", "heston-long", "rbergomi-long"]
+SEQUENCE_DATASETS = ["aemet", "expr_genes", "economy", "heston", "heston-long"]
 ALL_DATASETS = PDE_DATASETS + SEQUENCE_DATASETS
 
 # Dataset to output directory mapping
@@ -46,9 +46,7 @@ DATASET_OUTPUT_DIRS = {
     "expr_genes": "expr_genes_ot_comprehensive",
     "economy": "econ_ot_comprehensive",
     "heston": "Heston_ot_kappa1.0",
-    "rbergomi": "rBergomi_ot_H0p10",
     "heston-long": "Heston_ot_long",
-    "rbergomi-long": "rBergomi_ot_long",
 }
 
 # Pretty names for display
@@ -61,9 +59,7 @@ DATASET_DISPLAY_NAMES = {
     "expr_genes": "Gene Expression",
     "economy": "Economy",
     "heston": "Heston",
-    "rbergomi": "rBergomi",
     "heston-long": "Heston (Long)",
-    "rbergomi-long": "rBergomi (Long)",
 }
 
 KERNEL_DISPLAY_NAMES = {
@@ -1155,7 +1151,7 @@ def create_5x2_combined_plot(
     dpi: int = 300,
 ):
     """
-    Create a 4x2 combined violin plot for all datasets (excluding moGP).
+    Create a 4x2 combined violin plot for all datasets.
     High resolution for full-page figures.
     """
     # Order datasets: sequence first, then PDE (8 datasets for 4x2)
@@ -1164,7 +1160,7 @@ def create_5x2_combined_plot(
         # Row 1: Sequence datasets
         'aemet', 'economy',
         # Row 2: Sequence datasets
-        'heston', 'rbergomi',
+        'heston', 
         # Row 3: PDE datasets
         'kdv', 'navier_stokes',
         # Row 4: PDE datasets

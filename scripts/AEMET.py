@@ -78,7 +78,7 @@ for i in range(N):
                 eval_int=int(0), save_int=int(1), generate=False, save_path=spath)
     sampleddpm[i,:,:] = ddpm.sample([n_x], n_samples=n_gen_samples).squeeze()
 
-# torch.save(sampleddpm, './moGPsamples/sampleddpm.pt')
+# torch.save(sampleddpm, './samples/sampleddpm.pt')
 
 
 # DDO hyperparameters
@@ -104,7 +104,7 @@ for i in range(N):
                 eval_int=int(0), save_int=int(1), generate=False, save_path=spath)
     sampleddo[i,:,:] = ddo.sample([n_x], n_samples=n_gen_samples).squeeze()
 
-# torch.save(sampleddo, './moGPsamples/sampleddo.pt')
+# torch.save(sampleddo, './samples/sampleddo.pt')
 
 
 # FFM OT hyperparameters
@@ -162,5 +162,5 @@ for i in range(N):
                generate=False, save_path=spath)
     samplegano[i,:,:] = gano.sample([n_x], n_gen_samples).squeeze()
 
-# torch.save(samplegano, './moGPsamples/samplegano.pt')
+# torch.save(samplegano, './samples/samplegano.pt')
 

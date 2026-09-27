@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Generate individual bar plots showing best performance per kernel category
-for time series datasets (AEMET, expr_genes, Heston, rBergomi).
+for time series datasets (AEMET, expr_genes, Heston).
 """
 
 import json
@@ -106,20 +106,10 @@ DATASETS = {
         'title': 'Heston',
         'summary_files': ['comprehensive_metrics.json', 'experiment_summary.json'],
     },
-    'rBergomi': {
-        'dir': 'rBergomi_ot_H0p10',
-        'title': 'rBergomi',
-        'summary_files': ['comprehensive_metrics.json', 'experiment_summary.json'],
-    },
     'econ1': {
         'dir': 'econ_ot_comprehensive/econ1_population',
         'title': 'Economy',
         'summary_files': ['comprehensive_metrics.json'],
-    },
-    'moGP': {
-        'dir': 'moGP_ot_comprehensive',
-        'title': 'Multi-output GP',
-        'summary_files': ['comprehensive_metrics.json', 'experiment_summary.json'],
     },
     # PDE datasets
     'kdv': {
@@ -978,7 +968,7 @@ def generate_combined_loss_curves_plot(
     dpi: int = 300
 ):
     """
-    Generate a combined 5x2 plot with loss curves for all datasets (excluding moGP).
+    Generate a combined 5x2 plot with loss curves for all datasets.
     High resolution for full-page figures.
     
     Args:
@@ -1000,13 +990,13 @@ def generate_combined_loss_curves_plot(
         print("(Excluding Gaussian OT)")
     print("=" * 60)
     
-    # Datasets to include (exclude moGP)
+    # Datasets to include
     # Order: sequence datasets first row, then PDE datasets
     datasets_order = [
         # Row 1-2: Sequence datasets
         'AEMET', 'expr_genes',
         'econ1', 'Heston',
-        'rBergomi', 'kdv',
+        'kdv',
         # Row 3-5: PDE datasets
         'navier_stokes', 'stochastic_kdv',
         'stochastic_ns', 'ginzburg_landau',
@@ -1321,7 +1311,7 @@ BASELINE_METRICS_PDE = ['mean_mse', 'variance_mse', 'spectrum_mse_log']
 BASELINE_LABELS_PDE = ['Mean', 'Variance', 'Spectrum (log)']
 
 # Dataset groups for baseline comparison
-SEQUENCE_DATASETS = ['AEMET', 'expr_genes', 'econ1', 'Heston', 'rBergomi']
+SEQUENCE_DATASETS = ['AEMET', 'expr_genes', 'econ1', 'Heston']
 PDE_DATASETS = ['kdv', 'navier_stokes', 'stochastic_kdv', 'stochastic_ns']
 
 
@@ -1923,7 +1913,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--loss-curves-combined',
         action='store_true',
-        help='Generate combined 5x2 loss curves plot (all datasets except moGP, high resolution)'
+        help='Generate combined 5x2 loss curves plot (all datasets, high resolution)'
     )
     parser.add_argument(
         '--dpi',

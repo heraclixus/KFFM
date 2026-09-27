@@ -182,16 +182,6 @@ DATASET_CONFIGS = {
         't_scaling': 1000,
         'data_file': '../data/aemet.csv',
     },
-    'rbergomi': {
-        'spatial_dims': (64,),
-        'n_channels': 1,
-        'modes': 32,
-        'width': 256,
-        'kernel_length': 0.001,
-        'kernel_variance': 1.0,
-        't_scaling': 1000,
-        'data_file': '../data/rBergomi_H0p10_n5000.pt',
-    },
     'heston': {
         'spatial_dims': (64,),
         'n_channels': 1,

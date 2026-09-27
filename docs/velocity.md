@@ -132,7 +132,7 @@ python analyze_velocity_field.py \
 
 # Generate comparison plots
 python plot_velocity_uniformity.py \
-    --datasets aemet rbergomi heston kdv stochastic_kdv
+    --datasets aemet heston kdv stochastic_kdv
 ```
 
 ### Output

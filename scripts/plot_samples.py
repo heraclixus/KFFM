@@ -55,13 +55,6 @@ DATASETS = {
         # Ground truth generated on-the-fly from this data file
         'data_file': 'data/Heston_kappa1.0_sigma0.3_n5000.pt',
     },
-    'rBergomi': {
-        'dir': 'rBergomi_ot_H0p10',
-        'title': 'Rough Bergomi',
-        'is_2d': False,
-        # Ground truth generated on-the-fly from this data file
-        'data_file': 'data/rBergomi_H0p10_n5000.pt',
-    },
     'kdv': {
         'dir': 'kdv_ot',
         'title': 'KdV Equation',
@@ -262,7 +255,7 @@ def load_samples(
                                 return v
                     return data
         
-        # 4. Try loading from original data file (for Heston, rBergomi, etc.)
+        # 4. Try loading from original data file (for Heston, etc.)
         if data_file and project_root:
             data_path = project_root / data_file
             if data_path.exists():
@@ -272,7 +265,6 @@ def load_samples(
                     # Heston format: has 'log_V_normalized', 'log_S_normalized', etc.
                     if 'log_V_normalized' in data:
                         return data['log_V_normalized']
-                    # rBergomi format: has 'log_V_normalized' 
                     if 'log_S_normalized' in data:
                         return data['log_S_normalized']
                     # Generic: try common keys
@@ -480,7 +472,7 @@ def create_sample_comparison_figure(
     # Select appropriate plot order based on data type
     plot_order = PLOT_ORDER_2D if data_is_2d else PLOT_ORDER_1D
     
-    # Get data file path for on-the-fly datasets (Heston, rBergomi)
+    # Get data file path for on-the-fly datasets (Heston)
     data_file = dataset_info.get('data_file', None)
     # Get samples file name (default: samples.pt, can be samples_original.pt)
     samples_file = dataset_info.get('samples_file', 'samples.pt')

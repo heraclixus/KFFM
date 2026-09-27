@@ -10,7 +10,7 @@ Usage:
     python plot_velocity_uniformity.py
     
     # Specify datasets
-    python plot_velocity_uniformity.py --datasets aemet rbergomi heston kdv
+    python plot_velocity_uniformity.py --datasets aemet heston kdv
     
     # Custom output path
     python plot_velocity_uniformity.py --output ../outputs/velocity_uniformity.pdf
@@ -46,7 +46,6 @@ MODEL_ORDER = ['none', 'euclidean', 'rbf', 'signature']
 # Dataset display names
 DATASET_DISPLAY_NAMES = {
     'aemet': 'AEMET',
-    'rbergomi': 'rBergomi',
     'heston': 'Heston',
     'kdv': 'KdV',
     'stochastic_kdv': 'Stoch. KdV',
@@ -516,7 +515,7 @@ def main():
     )
     
     parser.add_argument('--datasets', type=str, nargs='+',
-                       default=['aemet', 'rbergomi', 'heston', 'kdv', 'stochastic_kdv', 
+                       default=['aemet', 'heston', 'kdv', 'stochastic_kdv', 
                                 'stochastic_ns', 'economy', 'expr_genes'],
                        help='Datasets to include in plot')
     parser.add_argument('--analysis-dir', type=str,

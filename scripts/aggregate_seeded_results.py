@@ -32,7 +32,7 @@ from collections import defaultdict
 # =============================================================================
 
 PDE_DATASETS = ["kdv", "navier_stokes", "stochastic_kdv", "stochastic_ns", "navier_stokes_128"]
-SEQUENCE_DATASETS = ["aemet", "expr_genes", "economy", "heston", "rbergomi", "heston-long", "rbergomi-long"]
+SEQUENCE_DATASETS = ["aemet", "expr_genes", "economy", "heston", "heston-long"]
 
 DATASET_DISPLAY_NAMES = {
     "kdv": "KdV",
@@ -43,9 +43,7 @@ DATASET_DISPLAY_NAMES = {
     "expr_genes": "Gene Expr.",
     "economy": "Economy",
     "heston": "Heston",
-    "rbergomi": "rBergomi",
     "heston-long": "Heston (Long)",
-    "rbergomi-long": "rBergomi (Long)",
     "navier_stokes_128": "NS (128x128)",
 }
 

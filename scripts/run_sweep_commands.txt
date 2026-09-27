@@ -91,36 +91,6 @@ CUDA_VISIBLE_DEVICES=5 nohup python navier_stokes_ot.py --config-file ../configs
 CUDA_VISIBLE_DEVICES=5 nohup python navier_stokes_ot.py --config-file ../configs/navier_stokes_spectrum_focus.yaml --config combo_rbf_gp0.01_sigma10_modes24 --seed 1 &> log_ns23.txt &
 
 # =============================================================================
-# rBergomi - Phase 2 Autocorrelation Focus (28 configs)
-# =============================================================================
-CUDA_VISIBLE_DEVICES=0 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config gaussian_ot_reg1e-2 --seed 1 &> log_rbergomi1.txt &
-CUDA_VISIBLE_DEVICES=0 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config gaussian_ot_reg1e-4 --seed 1 &> log_rbergomi2.txt &
-CUDA_VISIBLE_DEVICES=0 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config gaussian_ot_reg1e-5 --seed 1 &> log_rbergomi3.txt &
-CUDA_VISIBLE_DEVICES=0 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config gaussian_ot_sample --seed 1 &> log_rbergomi4.txt &
-CUDA_VISIBLE_DEVICES=0 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config rbf_exact_sigma0.1 --seed 1 &> log_rbergomi5.txt &
-CUDA_VISIBLE_DEVICES=0 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config rbf_exact_sigma0.5 --seed 1 &> log_rbergomi6.txt &
-CUDA_VISIBLE_DEVICES=0 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config rbf_exact_sigma0.2 --seed 1 &> log_rbergomi7.txt &
-CUDA_VISIBLE_DEVICES=1 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config euclidean_exact_gp0.5 --seed 1 &> log_rbergomi8.txt &
-CUDA_VISIBLE_DEVICES=1 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config euclidean_exact_gp0.2 --seed 1 &> log_rbergomi9.txt &
-CUDA_VISIBLE_DEVICES=1 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config gp_kl0.5_reg0.1 --seed 1 &> log_rbergomi10.txt &
-CUDA_VISIBLE_DEVICES=1 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config gp_kl0.2_reg0.1 --seed 1 &> log_rbergomi11.txt &
-CUDA_VISIBLE_DEVICES=1 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config gp_kl0.1_reg0.1 --seed 1 &> log_rbergomi12.txt &
-CUDA_VISIBLE_DEVICES=1 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config gp_kl2.0_reg0.1 --seed 1 &> log_rbergomi13.txt &
-CUDA_VISIBLE_DEVICES=1 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config euclidean_gp0.5_reg0.1 --seed 1 &> log_rbergomi14.txt &
-CUDA_VISIBLE_DEVICES=2 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config euclidean_gp0.2_reg0.1 --seed 1 &> log_rbergomi15.txt &
-CUDA_VISIBLE_DEVICES=2 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config rbf_sigma0.5_reg0.01 --seed 1 &> log_rbergomi16.txt &
-CUDA_VISIBLE_DEVICES=2 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config rbf_sigma0.5_reg0.005 --seed 1 &> log_rbergomi17.txt &
-CUDA_VISIBLE_DEVICES=2 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config euclidean_reg0.01 --seed 1 &> log_rbergomi18.txt &
-CUDA_VISIBLE_DEVICES=2 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config euclidean_reg0.005 --seed 1 &> log_rbergomi19.txt &
-CUDA_VISIBLE_DEVICES=2 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config combo_gp0.5_sigma0.5_reg0.05 --seed 1 &> log_rbergomi20.txt &
-CUDA_VISIBLE_DEVICES=3 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config combo_gp0.2_sigma0.2_reg0.05 --seed 1 &> log_rbergomi21.txt &
-CUDA_VISIBLE_DEVICES=3 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config combo_exact_gp0.5_sigma0.5 --seed 1 &> log_rbergomi22.txt &
-CUDA_VISIBLE_DEVICES=3 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config rbf_sigma0.5_reg0.5 --seed 1 &> log_rbergomi23.txt &
-CUDA_VISIBLE_DEVICES=3 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config rbf_sigma0.5_reg1.0 --seed 1 &> log_rbergomi24.txt &
-CUDA_VISIBLE_DEVICES=3 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config sig_gp0.5 --seed 1 &> log_rbergomi25.txt &
-CUDA_VISIBLE_DEVICES=3 nohup python rBergomi_ot.py --config-file ../configs/rbergomi_phase2_sweep.yaml --config sig_gp0.2_sigma0.1 --seed 1 &> log_rbergomi26.txt &
-
-# =============================================================================
 # Stochastic KdV - Mean/Spectrum Focus (16 configs)
 # =============================================================================
 CUDA_VISIBLE_DEVICES=0 nohup python stochastic_kdv_ot.py --config-file ../configs/stochastic_kdv_mean_focus.yaml --config euclidean_reg0.005 --seed 1 &> log_sto_kdv1.txt &
@@ -141,6 +111,6 @@ CUDA_VISIBLE_DEVICES=6 nohup python stochastic_kdv_ot.py --config-file ../config
 CUDA_VISIBLE_DEVICES=7 nohup python stochastic_kdv_ot.py --config-file ../configs/stochastic_kdv_mean_focus.yaml --config rbf_sigma0.2_exact --seed 1 &> log_sto_kdv16.txt &
 
 # =============================================================================
-# TOTAL: 117 experiments
+# TOTAL: 89 experiments
 # =============================================================================
 

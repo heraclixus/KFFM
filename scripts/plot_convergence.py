@@ -81,7 +81,6 @@ METRIC_DISPLAY = {
 DATASET_DISPLAY = {
     "aemet": "AEMET",
     "heston": "Heston",
-    "rbergomi": "rBergomi",
     "economy": "Economy",
     "expr_genes": "Gene Expression",
     "kdv": "KdV",
@@ -89,7 +88,6 @@ DATASET_DISPLAY = {
     "stochastic_kdv": "Stochastic KdV",
     "stochastic_ns": "Stochastic NS",
     "heston-long": "Heston-Long",
-    "rbergomi-long": "rBergomi-Long",
 }
 
 PDE_DATASETS = ["kdv", "navier_stokes", "stochastic_kdv", "stochastic_ns"]

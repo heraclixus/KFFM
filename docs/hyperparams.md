@@ -50,7 +50,7 @@ Four kernel types are compared in the sensitivity analysis:
 - **Trade-off**: Higher order = captures more complex path interactions but is more computationally expensive
 - **Dataset-specific**:
   - Smooth data (AEMET): `0-2` typically sufficient
-  - Rough paths (rBergomi, H=0.1): Lower orders `0-1` often work better
+  - Rough paths: lower orders `0-1` often work better
 
 ### Lead-Lag Augmentation (`lead_lag`)
 - **Options**: `{true, false}`
@@ -96,7 +96,7 @@ Four kernel types are compared in the sensitivity analysis:
 
 ## Dataset-Specific Configurations
 
-### Sequence Datasets (AEMET, Economy, Heston, rBergomi, Expr Genes)
+### Sequence Datasets (AEMET, Economy, Heston, Expr Genes)
 
 | Hyperparameter | Typical Range |
 |----------------|---------------|
@@ -121,9 +121,9 @@ Four kernel types are compared in the sensitivity analysis:
 
 ## Best Configurations per Dataset Category
 
-### Rough Volatility Models (rBergomi, Heston)
+### Stochastic Volatility Paths (Heston)
 ```yaml
-# Top performer for rough paths (H=0.1)
+# Top performer for volatility paths
 kernel: signature
 dyadic_order: 0-1
 lead_lag: true

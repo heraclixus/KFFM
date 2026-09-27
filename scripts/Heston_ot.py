@@ -7,13 +7,7 @@ log-variance paths comparing:
 - Different OT methods (exact, sinkhorn)
 - Different coupling strategies (sample, barycentric)
 
-The Heston model generates "smoother" variance paths compared to rBergomi,
-serving as a baseline to compare with rough volatility models.
-
-HYPOTHESIS: 
-- Signature-OT should help moderately on Heston (mean-reverting dynamics)
-- The benefit should be LESS than on rough rBergomi paths
-- This demonstrates that signature-OT specifically helps with path roughness
+The Heston model generates mean-reverting, diffusion-driven variance paths.
 
 Usage:
     python Heston_ot.py

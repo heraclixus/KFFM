@@ -197,17 +197,6 @@ def get_dataset_configs() -> Dict:
             "is_2d": False,
             "default_tol": TOL_1D,
         },
-        "rBergomi": {
-            "n_x": 100,
-            "n_channels": 1,
-            "modes": 32,  # from rBergomi_ot.py (non-long version)
-            "width": 256,
-            "kernel_length": 0.01,
-            "kernel_variance": 0.1,
-            "output_dir": "rBergomi_ot_H0p10",
-            "is_2d": False,
-            "default_tol": TOL_1D,
-        },
         "Heston": {
             "n_x": 100,
             "n_channels": 1,
@@ -881,7 +870,7 @@ if __name__ == "__main__":
     parser.add_argument('--atol', type=float, default=None,
                         help='ODE absolute tolerance (default: 1e-10 for 1D, 1e-5 for 2D per FFM paper)')
     parser.add_argument('--dataset', type=str, default=None,
-                        help='Specific dataset to run (e.g., aemet, rbergomi)')
+                        help='Specific dataset to run (e.g., aemet, heston)')
     parser.add_argument('--output', type=str, default='../outputs/nfe_results.tex',
                         help='Output path for LaTeX table')
     parser.add_argument('--device', type=str, default=None,

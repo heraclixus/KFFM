@@ -1,5 +1,5 @@
 # =============================================================================
-# Long Time Series Sweep Config (rbergomi-long, heston-long)
+# Long Time Series Sweep Config (heston-long)
 # 
 # For sequences with 1000 time steps (vs standard 100 steps)
 #
@@ -25,7 +25,7 @@ independent:
   use_ot: false
 
 # -----------------------------------------------------------------------------
-# Gaussian OT - Best for autocorrelation on standard rBergomi
+# Gaussian OT
 # Closed-form, fast, scales well to long sequences
 # -----------------------------------------------------------------------------
 gaussian_ot:
@@ -626,12 +626,6 @@ sig_leadlag_linear_long:
 # SECTION 4: DATASET-SPECIFIC RECOMMENDATIONS
 # =============================================================================
 # 
-# For rbergomi-long (rough volatility, H=0.1):
-# - Signature kernel with lead-lag should excel
-# - Lower dyadic_order (0-1) for very rough paths
-# - Smaller static_kernel_sigma for local roughness
-# - Recommended: sig_leadlag_order1_long or sig_leadlag_order2_sigma0.5_long
-#
 # For heston-long (mean-reverting, smoother):
 # - Higher dyadic_order (1-2) for smoother structure
 # - Lead-lag helps with mean reversion patterns

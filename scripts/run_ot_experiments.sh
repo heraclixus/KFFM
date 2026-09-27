@@ -40,10 +40,8 @@
 #
 # Usage:
 #   ./run_ot_experiments.sh econ       # Run economics experiments
-#   ./run_ot_experiments.sh moGP       # Run mixture of GPs experiments
 #   ./run_ot_experiments.sh expr_genes # Run gene expression experiments
 #   ./run_ot_experiments.sh AEMET      # Run AEMET weather experiments
-#   ./run_ot_experiments.sh rBergomi   # Run rBergomi rough volatility experiments
 #   ./run_ot_experiments.sh Heston     # Run Heston stochastic volatility experiments
 #   ./run_ot_experiments.sh all        # Run all experiments
 #
@@ -107,31 +105,6 @@ print_config_summary() {
     echo "    - signature_sinkhorn_reg0.1, reg0.5, reg1.0"
     echo "    - signature_sinkhorn_barycentric"
     echo ""
-}
-
-# Run moGP experiments
-run_moGP() {
-    print_header "Running Mixture of GPs OT-FFM Experiments"
-    
-    cd "$(dirname "$0")"
-    
-    echo -e "${BLUE}Output directory: ../outputs/moGP_ot_comprehensive/${NC}"
-    print_config_summary
-    
-    # Set CUDA device
-    export CUDA_VISIBLE_DEVICES=${CUDA_DEVICE:-0}
-    echo -e "${BLUE}Using CUDA device: $CUDA_VISIBLE_DEVICES${NC}"
-    
-    # Run the script
-    START_TIME=$(date +%s)
-    
-    python moGP_ot.py 2>&1 | tee ../outputs/moGP_ot_comprehensive/experiment_log.txt
-    
-    END_TIME=$(date +%s)
-    ELAPSED=$((END_TIME - START_TIME))
-    
-    echo ""
-    echo -e "${GREEN}moGP experiments completed in $((ELAPSED / 60)) minutes $((ELAPSED % 60)) seconds${NC}"
 }
 
 # Run economics experiments
@@ -222,37 +195,6 @@ run_AEMET() {
     echo -e "${GREEN}AEMET weather experiments completed in $((ELAPSED / 60)) minutes $((ELAPSED % 60)) seconds${NC}"
 }
 
-# Run rBergomi rough volatility experiments
-run_rBergomi() {
-    print_header "Running rBergomi Rough Volatility OT-FFM Experiments"
-    
-    cd "$(dirname "$0")"
-    
-    echo -e "${BLUE}Output directory: ../outputs/rBergomi_ot_H0p10/${NC}"
-    echo -e "${BLUE}Dataset:${NC}"
-    echo "  - rBergomi log-variance paths (H=0.1, very rough)"
-    echo ""
-    print_config_summary
-    echo -e "${CYAN}Note: Signature kernel should excel on rough paths!${NC}"
-    echo ""
-    
-    # Set CUDA device
-    export CUDA_VISIBLE_DEVICES=${CUDA_DEVICE:-0}
-    echo -e "${BLUE}Using CUDA device: $CUDA_VISIBLE_DEVICES${NC}"
-    
-    # Run the script
-    START_TIME=$(date +%s)
-    
-    mkdir -p ../outputs/rBergomi_ot_H0p10
-    python rBergomi_ot.py 2>&1 | tee ../outputs/rBergomi_ot_H0p10/experiment_log.txt
-    
-    END_TIME=$(date +%s)
-    ELAPSED=$((END_TIME - START_TIME))
-    
-    echo ""
-    echo -e "${GREEN}rBergomi experiments completed in $((ELAPSED / 60)) minutes $((ELAPSED % 60)) seconds${NC}"
-}
-
 # Run Heston stochastic volatility experiments
 run_Heston() {
     print_header "Running Heston Stochastic Volatility OT-FFM Experiments"
@@ -301,19 +243,16 @@ main() {
         echo ""
         echo "Options:"
         echo "  econ       - Run economics time series experiments"
-        echo "  moGP       - Run mixture of GPs experiments"
         echo "  expr_genes - Run gene expression experiments"
         echo "  AEMET      - Run AEMET weather experiments"
-        echo "  rBergomi   - Run rBergomi rough volatility experiments"
         echo "  Heston     - Run Heston stochastic volatility experiments"
-        echo "  stochvol   - Run both rBergomi and Heston (volatility comparison)"
         echo "  all        - Run all experiments"
         echo ""
         echo "Environment variables:"
         echo "  CUDA_DEVICE  - GPU device to use (default: 0)"
         echo ""
         echo "Example:"
-        echo "  CUDA_DEVICE=1 $0 rBergomi"
+        echo "  CUDA_DEVICE=1 $0 Heston"
         echo ""
         echo "Each experiment runs 15 OT configurations:"
         print_config_summary
@@ -323,11 +262,9 @@ main() {
     EXPERIMENT=$1
     
     # Create output directories
-    mkdir -p ../outputs/moGP_ot_comprehensive
     mkdir -p ../outputs/econ_ot_comprehensive
     mkdir -p ../outputs/expr_genes_ot_comprehensive
     mkdir -p ../outputs/AEMET_ot_comprehensive
-    mkdir -p ../outputs/rBergomi_ot_H0p10
     mkdir -p ../outputs/Heston_ot_kappa1.0
     
     # Setup
@@ -339,36 +276,24 @@ main() {
         econ)
             run_econ
             ;;
-        moGP)
-            run_moGP
-            ;;
         expr_genes)
             run_expr_genes
             ;;
         AEMET)
             run_AEMET
             ;;
-        rBergomi)
-            run_rBergomi
-            ;;
         Heston)
             run_Heston
             ;;
-        stochvol)
-            run_rBergomi
-            run_Heston
-            ;;
         all)
-            run_moGP
             run_econ
             run_expr_genes
             run_AEMET
-            run_rBergomi
             run_Heston
             ;;
         *)
             echo -e "${RED}Unknown experiment: $EXPERIMENT${NC}"
-            echo "Valid options: econ, moGP, expr_genes, AEMET, rBergomi, Heston, stochvol, all"
+            echo "Valid options: econ, expr_genes, AEMET, Heston, all"
             exit 1
             ;;
     esac
@@ -381,9 +306,6 @@ main() {
     echo ""
     echo -e "${BLUE}Results saved to:${NC}"
     
-    if [ "$EXPERIMENT" == "moGP" ] || [ "$EXPERIMENT" == "all" ]; then
-        echo "  - ../outputs/moGP_ot_comprehensive/"
-    fi
     if [ "$EXPERIMENT" == "econ" ] || [ "$EXPERIMENT" == "all" ]; then
         echo "  - ../outputs/econ_ot_comprehensive/"
     fi
@@ -393,10 +315,7 @@ main() {
     if [ "$EXPERIMENT" == "AEMET" ] || [ "$EXPERIMENT" == "all" ]; then
         echo "  - ../outputs/AEMET_ot_comprehensive/"
     fi
-    if [ "$EXPERIMENT" == "rBergomi" ] || [ "$EXPERIMENT" == "stochvol" ] || [ "$EXPERIMENT" == "all" ]; then
-        echo "  - ../outputs/rBergomi_ot_H0p10/"
-    fi
-    if [ "$EXPERIMENT" == "Heston" ] || [ "$EXPERIMENT" == "stochvol" ] || [ "$EXPERIMENT" == "all" ]; then
+    if [ "$EXPERIMENT" == "Heston" ] || [ "$EXPERIMENT" == "all" ]; then
         echo "  - ../outputs/Heston_ot_kappa1.0/"
     fi
     

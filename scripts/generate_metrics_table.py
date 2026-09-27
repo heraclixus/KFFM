@@ -40,7 +40,6 @@ KERNEL_DISPLAY_NAMES = {
 # Dataset display names
 DATASET_DISPLAY_NAMES = {
     'aemet': 'AEMET',
-    'rbergomi': 'rBergomi',
     'heston': 'Heston',
     'kdv': 'KdV',
     'stochastic_kdv': 'Stoch. KdV',
@@ -52,7 +51,7 @@ DATASET_DISPLAY_NAMES = {
 
 # Datasets to include
 DEFAULT_DATASETS = [
-    'aemet', 'rbergomi', 'heston', 'kdv', 
+    'aemet', 'heston', 'kdv', 
     'stochastic_kdv', 'navier_stokes', 'stochastic_ns', 'expr_genes', 'economy'
 ]
 

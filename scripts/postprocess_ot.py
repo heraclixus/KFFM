@@ -5,8 +5,6 @@ Loads saved results and regenerates summary files and plots.
 Usage:
     python econ_ot_postprocess.py                           # Default: econ_ot_comprehensive
     python econ_ot_postprocess.py ../outputs/AEMET_ot_comprehensive
-    python econ_ot_postprocess.py ../outputs/moGP_ot_comprehensive
-    python econ_ot_postprocess.py ../outputs/rBergomi_ot_H0p10
     python econ_ot_postprocess.py ../outputs/Heston_ot_kappa1.0
     python econ_ot_postprocess.py ../outputs/expr_genes_ot_comprehensive
 """
@@ -494,8 +492,6 @@ if __name__ == "__main__":
 Examples:
     python econ_ot_postprocess.py                                    # Default: econ_ot_comprehensive
     python econ_ot_postprocess.py ../outputs/AEMET_ot_comprehensive  # AEMET experiments
-    python econ_ot_postprocess.py ../outputs/moGP_ot_comprehensive   # moGP experiments
-    python econ_ot_postprocess.py ../outputs/rBergomi_ot_H0p10       # rBergomi experiments
     python econ_ot_postprocess.py ../outputs/Heston_ot_kappa1.0      # Heston experiments
         """
     )

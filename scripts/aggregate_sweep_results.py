@@ -10,7 +10,6 @@ This script:
 
 Usage:
     python aggregate_sweep_results.py --dataset econ1_population
-    python aggregate_sweep_results.py --dataset rBergomi
     python aggregate_sweep_results.py --dataset stochastic_kdv
     python aggregate_sweep_results.py --dataset stochastic_ns
     python aggregate_sweep_results.py --all  # Process all datasets
@@ -39,22 +38,6 @@ DATASET_CONFIG = {
         "subdirectory": "econ1_population",  # Results are in subdirectory
         "key_metrics": ["autocorrelation_mse", "mean_mse", "variance_mse", "spectrum_mse", "spectrum_mse_log"],
         "lower_is_better": {"autocorrelation_mse", "mean_mse", "variance_mse", "spectrum_mse", 
-                           "spectrum_mse_log", "skewness_mse", "kurtosis_mse", "density_mse"},
-    },
-    "rBergomi": {
-        "main_dir": "rBergomi_ot_H0p10",  # Fixed: was rBergomi_ot_comprehensive
-        "sweep_dirs": ["rbergomi_signature_sweep"],  # Phase 2 results go to main_dir directly
-        "subdirectory": None,
-        "key_metrics": ["autocorrelation_mse", "mean_mse", "kurtosis_mse", "spectrum_mse", "spectrum_mse_log"],
-        "lower_is_better": {"autocorrelation_mse", "mean_mse", "variance_mse", "spectrum_mse",
-                           "spectrum_mse_log", "skewness_mse", "kurtosis_mse", "density_mse"},
-    },
-    "rBergomi_long": {
-        "main_dir": "rBergomi_long_ot_H0p10",  # Long time series (1000 steps)
-        "sweep_dirs": [],  # Sweep results go to main_dir directly
-        "subdirectory": None,
-        "key_metrics": ["autocorrelation_mse", "mean_mse", "variance_mse", "kurtosis_mse", "spectrum_mse", "spectrum_mse_log"],
-        "lower_is_better": {"autocorrelation_mse", "mean_mse", "variance_mse", "spectrum_mse",
                            "spectrum_mse_log", "skewness_mse", "kurtosis_mse", "density_mse"},
     },
     "Heston_long": {

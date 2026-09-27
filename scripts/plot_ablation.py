@@ -30,7 +30,6 @@ from typing import Dict, List, Optional, Tuple
 DATASET_DISPLAY = {
     "aemet": "AEMET",
     "heston": "Heston",
-    "rbergomi": "rBergomi",
     "economy": "Economy",
     "expr_genes": "Gene Expr.",
     "kdv": "KdV",

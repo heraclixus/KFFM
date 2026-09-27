@@ -288,37 +288,6 @@ def setup_expr_genes():
     }
 
 
-def setup_rbergomi():
-    """Setup Rough Bergomi dataset."""
-    data = torch.load('../data/rBergomi_H0p10_n5000.pt')
-    if isinstance(data, dict):
-        train_data = data.get('log_V_normalized', data.get('data', list(data.values())[0]))
-    else:
-        train_data = data
-    
-    train_data = train_data.float()
-    if train_data.ndim == 2:
-        train_data = train_data.unsqueeze(1)
-    
-    # Use subset for profiling
-    train_data = train_data[:1000]
-    n_x = train_data.shape[-1]
-    
-    return {
-        'train_data': train_data,
-        'n_x': n_x,
-        'batch_size': 64,
-        'batch_size_sig': 32,
-        'modes': 32,
-        'width': 256,
-        'mlp_width': 128,
-        'kernel_length': 0.001,
-        'kernel_variance': 1.0,
-        'is_2d': False,
-        'name': 'rBergomi',
-    }
-
-
 def setup_kdv():
     """Setup KdV dataset."""
     import scipy.io as sio
@@ -400,7 +369,6 @@ DATASET_SETUP = {
     'navier_stokes': setup_navier_stokes,
     'stochastic_ns': setup_stochastic_ns,
     'expr_genes': setup_expr_genes,
-    'rbergomi': setup_rbergomi,
     'kdv': setup_kdv,
     'stochastic_kdv': setup_stochastic_kdv,
 }
@@ -408,7 +376,7 @@ DATASET_SETUP = {
 # Datasets for the 3x3 combined plot (in order)
 DATASETS_3X3 = [
     'aemet', 'expr_genes', 'economy',
-    'heston', 'rbergomi', 'kdv',
+    'heston', 'kdv',
     'navier_stokes', 'stochastic_kdv', 'stochastic_ns',
 ]
 

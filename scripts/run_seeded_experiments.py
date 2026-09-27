@@ -19,7 +19,7 @@ Usage:
     python run_seeded_experiments.py --dataset aemet --kernel rbf --n_seeds 10
     
     # Run with specific seed range
-    python run_seeded_experiments.py --dataset rbergomi --kernel euclidean --seed_start 0 --n_seeds 10
+    python run_seeded_experiments.py --dataset heston --kernel euclidean --seed_start 0 --n_seeds 10
     
     # Run single seed (for parallelization)
     python run_seeded_experiments.py --dataset economy --kernel signature --seed 5
@@ -55,7 +55,7 @@ import importlib.util
 
 # Dataset categories for display
 PDE_DATASETS = ["kdv", "navier_stokes", "navier_stokes_128", "navier_stokes_v1e5", "stochastic_kdv", "stochastic_ns"]
-SEQUENCE_DATASETS = ["aemet", "expr_genes", "economy", "heston", "rbergomi", "heston-long", "rbergomi-long"]
+SEQUENCE_DATASETS = ["aemet", "expr_genes", "economy", "heston", "heston-long"]
 
 # Datasets with 2D spatial structure (for metric computation)
 # Note: kdv and stochastic_kdv are 1D spatial, navier_stokes and stochastic_ns are 2D spatial
@@ -73,9 +73,7 @@ DATASET_OUTPUT_DIRS = {
     "expr_genes": "expr_genes_ot_comprehensive",
     "economy": "econ_ot_comprehensive",
     "heston": "Heston_ot_kappa1.0",
-    "rbergomi": "rBergomi_ot_H0p10",
     "heston-long": "Heston_long_ot_kappa1.0",
-    "rbergomi-long": "rBergomi_long_ot_H0p10",
 }
 
 # For economy, we have subdirectories
@@ -212,8 +210,6 @@ CFM_RBF_OT_CONFIG = {
 # Dataset-specific sigma overrides for cfm_rbf_ot (matched to kFFM-RBF best configs)
 CFM_RBF_OT_SIGMA_OVERRIDES = {
     "stochastic_kdv": 0.5,
-    "rbergomi": 0.2,
-    "rbergomi-long": 0.2,
     "navier_stokes": 1.0,   # try smaller than default 5.0
     "navier_stokes_v1e5": 1.0,  # match standard NS
     "stochastic_ns": 1.0,
@@ -1572,120 +1568,6 @@ def setup_heston_long():
     }
 
 
-def setup_rbergomi():
-    """Setup rBergomi dataset (standard, 100 steps)."""
-    from data.rBergomi import generate_rBergomi_dataset
-    from pathlib import Path
-    
-    # Cache parameters
-    n_samples = 5000
-    n_steps = 100
-    alpha = -0.4
-    H = alpha + 0.5
-    
-    # Check for cached dataset
-    cache_dir = Path('../data/cache/')
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    H_str = f"{H:.2f}".replace('.', 'p')
-    cache_filename = f"rBergomi_H{H_str}_n{n_samples}_steps{n_steps}_seed42.pt"
-    cache_path = cache_dir / cache_filename
-    
-    if cache_path.exists():
-        print(f"Loading cached rBergomi dataset from {cache_path}...")
-        dataset = torch.load(cache_path, weights_only=False)
-    else:
-        print(f"Generating rBergomi dataset ({n_steps} steps)...")
-        dataset = generate_rBergomi_dataset(
-            n_samples=n_samples,
-            n_steps=n_steps,
-            T=1.0,
-            alpha=alpha,
-            rho=-0.7,
-            eta=1.5,
-            xi=0.04,
-            seed=42,
-        )
-        print(f"Saving dataset to cache: {cache_path}")
-        torch.save(dataset, cache_path)
-
-    train_data = dataset['log_V_normalized'].unsqueeze(1)
-    ground_truth = dataset['log_V_normalized']
-    n_x = train_data.shape[-1]
-
-    return {
-        "train_data": train_data,
-        "ground_truth": ground_truth,
-        "n_x": n_x,
-        "batch_size": 512,
-        "batch_size_sig": 128,
-        "modes": 32,
-        "width": 256,
-        "mlp_width": 128,
-        "kernel_length": 0.01,
-        "kernel_variance": 0.1,
-        "epochs": 300,
-        "n_gen_samples": 500,
-        "is_2d": False,
-    }
-
-
-def setup_rbergomi_long():
-    """Setup rBergomi dataset (long, 1000 steps)."""
-    from data.rBergomi import generate_rBergomi_long_dataset, RBERGOMI_LONG_STEPS
-    from pathlib import Path
-    
-    # Cache parameters
-    n_samples = 5000
-    n_steps = RBERGOMI_LONG_STEPS
-    alpha = -0.4
-    H = alpha + 0.5
-    
-    # Check for cached dataset
-    cache_dir = Path('../data/cache/')
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    H_str = f"{H:.2f}".replace('.', 'p')
-    cache_filename = f"rBergomi_H{H_str}_n{n_samples}_steps{n_steps}_seed42.pt"
-    cache_path = cache_dir / cache_filename
-    
-    if cache_path.exists():
-        print(f"Loading cached rBergomi-long dataset from {cache_path}...")
-        dataset = torch.load(cache_path, weights_only=False)
-    else:
-        print(f"Generating rBergomi-long dataset ({n_steps} steps)...")
-        dataset = generate_rBergomi_long_dataset(
-            n_samples=n_samples,
-            n_steps=n_steps,
-            T=1.0,
-            alpha=alpha,
-            rho=-0.7,
-            eta=1.5,
-            xi=0.04,
-            seed=42,
-        )
-        print(f"Saving dataset to cache: {cache_path}")
-        torch.save(dataset, cache_path)
-
-    train_data = dataset['log_V_normalized'].unsqueeze(1)
-    ground_truth = dataset['log_V_normalized']
-    n_x = train_data.shape[-1]
-
-    return {
-        "train_data": train_data,
-        "ground_truth": ground_truth,
-        "n_x": n_x,
-        "batch_size": 256,  # Smaller batch for longer sequences
-        "batch_size_sig": 64,  # Smaller batch for signature kernel with long sequences
-        "modes": 64,  # More modes for longer sequences
-        "width": 256,
-        "mlp_width": 128,
-        "kernel_length": 0.01,
-        "kernel_variance": 0.1,
-        "epochs": 300,
-        "n_gen_samples": 500,
-        "is_2d": False,
-    }
-
-
 SETUP_FUNCTIONS = {
     "kdv": setup_kdv,
     "navier_stokes": setup_navier_stokes,
@@ -1698,8 +1580,6 @@ SETUP_FUNCTIONS = {
     "economy": setup_economy,
     "heston": setup_heston,
     "heston-long": setup_heston_long,
-    "rbergomi": setup_rbergomi,
-    "rbergomi-long": setup_rbergomi_long,
 }
 
 
@@ -2711,7 +2591,7 @@ def main():
     parser.add_argument('--show-config', action='store_true',
                         help='Show the config that will be used (requires --dataset and --kernel)')
     parser.add_argument('--dataset', type=str, default=None,
-                        help='Dataset to run (e.g., kdv, aemet, rbergomi)')
+                        help='Dataset to run (e.g., kdv, aemet, heston)')
     parser.add_argument('--kernel', type=str, default=None,
                         help='Kernel type (none, signature, rbf, euclidean)')
     parser.add_argument('--metric', type=str, default='mean_mse',

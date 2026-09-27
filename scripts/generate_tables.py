@@ -187,18 +187,6 @@ DATASETS = {
         'summary_files': ['comprehensive_metrics.json', 'experiment_summary.json'],
         'category': 'sequence',
     },
-    'rBergomi': {
-        'dir': 'rBergomi_ot_H0p10',
-        'title': 'rBergomi',
-        'summary_files': ['comprehensive_metrics.json', 'experiment_summary.json'],
-        'category': 'sequence',
-    },
-    'moGP': {
-        'dir': 'moGP_ot_comprehensive',
-        'title': 'Multi-GP',
-        'summary_files': ['comprehensive_metrics.json', 'experiment_summary.json'],
-        'category': 'sequence',
-    },
     # PDE datasets
     'kdv': {
         'dir': 'kdv_ot',
@@ -233,7 +221,7 @@ DATASETS = {
 }
 
 # Dataset groups
-SEQUENCE_DATASETS = ['AEMET', 'expr_genes', 'econ1', 'Heston', 'rBergomi']
+SEQUENCE_DATASETS = ['AEMET', 'expr_genes', 'econ1', 'Heston']
 PDE_DATASETS = ['kdv', 'navier_stokes', 'stochastic_kdv', 'stochastic_ns']
 
 

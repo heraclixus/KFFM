@@ -2,9 +2,8 @@
 # Phase 3: Focused Improvement Sweep for Underperforming Datasets
 #
 # Datasets requiring improvement (focusing on most promising kernels):
-# 1. rBergomi: autocorrelation_mse (2.8x behind DDPM) - Signature kernel focus
-# 2. KdV: spectrum_mse_log (35% behind DDPM) - Euclidean/RBF focus  
-# 3. Stochastic KdV: spectrum_mse_log (10x behind DDPM) - RBF focus
+# 1. KdV: spectrum_mse_log (35% behind DDPM) - Euclidean/RBF focus  
+# 2. Stochastic KdV: spectrum_mse_log (10x behind DDPM) - RBF focus
 #
 # Datasets already winning (skip):
 # - Navier-Stokes: k-FFM already 21% better than DDPM
@@ -12,183 +11,7 @@
 # =============================================================================
 
 # #############################################################################
-# SECTION 1: rBergomi - SIGNATURE KERNEL FOCUS
-# Target: Close 2.8x gap on autocorrelation_mse (0.00128 vs DDPM 0.000457)
-#
-# Key insight: DDPM's denoising process naturally smooths autocorrelation.
-# Signature kernel captures path structure but may need better calibration.
-# 
-# New strategies:
-# - Higher dyadic orders (capture more path structure for rough paths H=0.1)
-# - Matern static kernel instead of RBF (better for rough processes)
-# - Time-warping via longer max_seq_len
-# - Signature + exact OT (remove sinkhorn regularization artifacts)
-# #############################################################################
-
-# Strategy 1a: Higher Dyadic Orders with Lead-Lag
-# Higher order = more iterated integrals = richer path description
-rbergomi_sig_leadlag_order4:
-  use_ot: true
-  ot_method: sinkhorn
-  ot_reg: 0.05
-  ot_kernel: signature
-  ot_coupling: sample
-  ot_kernel_params:
-    time_aug: true
-    lead_lag: true
-    dyadic_order: 4
-    static_kernel_type: rbf
-    static_kernel_sigma: 0.5
-    add_basepoint: true
-    normalize: true
-    max_seq_len: 64
-    max_batch: 32
-
-rbergomi_sig_leadlag_order5:
-  use_ot: true
-  ot_method: sinkhorn
-  ot_reg: 0.05
-  ot_kernel: signature
-  ot_coupling: sample
-  ot_kernel_params:
-    time_aug: true
-    lead_lag: true
-    dyadic_order: 5
-    static_kernel_type: rbf
-    static_kernel_sigma: 0.3
-    add_basepoint: true
-    normalize: true
-    max_seq_len: 64
-    max_batch: 32
-
-# Strategy 1b: Signature with EXACT OT (no Sinkhorn regularization)
-# Hypothesis: Exact coupling preserves autocorrelation structure
-rbergomi_sig_exact_leadlag:
-  use_ot: true
-  ot_method: exact
-  ot_kernel: signature
-  ot_coupling: sample
-  ot_kernel_params:
-    time_aug: true
-    lead_lag: true
-    dyadic_order: 2
-    static_kernel_type: rbf
-    static_kernel_sigma: 0.5
-    add_basepoint: true
-    normalize: true
-    max_seq_len: 64
-    max_batch: 16  # Smaller batch for exact OT
-
-rbergomi_sig_exact_order3:
-  use_ot: true
-  ot_method: exact
-  ot_kernel: signature
-  ot_coupling: sample
-  ot_kernel_params:
-    time_aug: true
-    lead_lag: true
-    dyadic_order: 3
-    static_kernel_type: rbf
-    static_kernel_sigma: 0.5
-    add_basepoint: true
-    normalize: true
-    max_seq_len: 64
-    max_batch: 16
-
-# Strategy 1c: Very small static kernel sigma for rough paths
-# Rough paths (H=0.1) have rapid local variation - small sigma captures this
-rbergomi_sig_sigma0.05:
-  use_ot: true
-  ot_method: sinkhorn
-  ot_reg: 0.05
-  ot_kernel: signature
-  ot_coupling: sample
-  ot_kernel_params:
-    time_aug: true
-    lead_lag: true
-    dyadic_order: 2
-    static_kernel_type: rbf
-    static_kernel_sigma: 0.05  # Very small for rough paths
-    add_basepoint: true
-    normalize: true
-    max_seq_len: 64
-    max_batch: 32
-
-rbergomi_sig_sigma0.01:
-  use_ot: true
-  ot_method: sinkhorn
-  ot_reg: 0.05
-  ot_kernel: signature
-  ot_coupling: sample
-  ot_kernel_params:
-    time_aug: true
-    lead_lag: true
-    dyadic_order: 2
-    static_kernel_type: rbf
-    static_kernel_sigma: 0.01
-    add_basepoint: true
-    normalize: true
-    max_seq_len: 64
-    max_batch: 32
-
-# Strategy 1d: Longer sequence capture with lead-lag
-# More temporal resolution for autocorrelation
-rbergomi_sig_longseq128:
-  use_ot: true
-  ot_method: sinkhorn
-  ot_reg: 0.05
-  ot_kernel: signature
-  ot_coupling: sample
-  ot_kernel_params:
-    time_aug: true
-    lead_lag: true
-    dyadic_order: 2
-    static_kernel_type: rbf
-    static_kernel_sigma: 0.5
-    add_basepoint: true
-    normalize: true
-    max_seq_len: 128  # Longer sequence
-    max_batch: 16
-
-# Strategy 1e: Unnormalized signature (preserve magnitude info)
-rbergomi_sig_unnorm_leadlag:
-  use_ot: true
-  ot_method: sinkhorn
-  ot_reg: 0.1
-  ot_kernel: signature
-  ot_coupling: sample
-  ot_kernel_params:
-    time_aug: true
-    lead_lag: true
-    dyadic_order: 2
-    static_kernel_type: rbf
-    static_kernel_sigma: 1.0
-    add_basepoint: true
-    normalize: false  # Keep magnitude info
-    max_seq_len: 64
-    max_batch: 32
-
-# Strategy 1f: Euclidean exact (already good at 0.00209)
-# Try with GP prior tuning for autocorrelation
-rbergomi_euclidean_exact_gp0.1:
-  use_ot: true
-  ot_method: exact
-  ot_kernel: euclidean
-  ot_coupling: sample
-  gp_kernel_length: 0.1  # Shorter for rough paths
-  gp_kernel_variance: 1.0
-
-rbergomi_euclidean_exact_gp0.05:
-  use_ot: true
-  ot_method: exact
-  ot_kernel: euclidean
-  ot_coupling: sample
-  gp_kernel_length: 0.05
-  gp_kernel_variance: 1.0
-
-
-# #############################################################################
-# SECTION 2: KdV - EUCLIDEAN/RBF FOCUS on SPECTRUM_MSE_LOG
+# SECTION 1: KdV - EUCLIDEAN/RBF FOCUS on SPECTRUM_MSE_LOG
 # Target: Beat DDPM (10.46) - Current best k-FFM: 15.97
 #
 # Key insight: spectrum_mse_log weights all frequencies equally.
@@ -198,7 +21,7 @@ rbergomi_euclidean_exact_gp0.05:
 # Most promising from Phase 1-2: GP prior + FNO modes
 # #############################################################################
 
-# Strategy 2a: Very smooth GP priors (match physical solution smoothness)
+# Strategy 1a: Very smooth GP priors (match physical solution smoothness)
 kdv_gp_kl0.2_reg0.1:
   use_ot: true
   ot_method: sinkhorn
@@ -226,7 +49,7 @@ kdv_gp_kl1.0_reg0.1:
   gp_kernel_length: 1.0
   gp_kernel_variance: 0.1
 
-# Strategy 2b: Higher FNO modes for better spectral resolution
+# Strategy 1b: Higher FNO modes for better spectral resolution
 kdv_fno_modes256_reg0.1:
   use_ot: true
   ot_method: sinkhorn
@@ -247,7 +70,7 @@ kdv_fno_modes192_gp0.05:
   gp_kernel_variance: 0.1
   fno_modes: 192
 
-# Strategy 2c: RBF with very large sigma (smooth coupling)
+# Strategy 1c: RBF with very large sigma (smooth coupling)
 kdv_rbf_sigma100_reg0.1:
   use_ot: true
   ot_method: sinkhorn
@@ -270,7 +93,7 @@ kdv_rbf_sigma200_reg0.1:
   gp_kernel_length: 0.01
   gp_kernel_variance: 0.1
 
-# Strategy 2d: Combined smooth GP + high modes + very low reg
+# Strategy 1d: Combined smooth GP + high modes + very low reg
 kdv_combo_smooth:
   use_ot: true
   ot_method: sinkhorn
@@ -291,7 +114,7 @@ kdv_combo_verysmooth:
   gp_kernel_variance: 0.1
   fno_modes: 96
 
-# Strategy 2e: Exact OT (no regularization artifact on spectrum)
+# Strategy 1e: Exact OT (no regularization artifact on spectrum)
 kdv_euclidean_exact_gp0.1:
   use_ot: true
   ot_method: exact
@@ -312,7 +135,7 @@ kdv_rbf_exact_sigma50:
 
 
 # #############################################################################
-# SECTION 3: Stochastic KdV - RBF FOCUS on SPECTRUM_MSE_LOG  
+# SECTION 2: Stochastic KdV - RBF FOCUS on SPECTRUM_MSE_LOG  
 # Target: Beat DDPM (0.317) - Current best k-FFM: 3.37 (10x gap)
 #
 # Key insight: k-FFM wins on mean_mse and spectrum_mse, loses on log-spectrum
@@ -320,7 +143,7 @@ kdv_rbf_exact_sigma50:
 # Need to capture spectral decay without over-regularizing.
 # #############################################################################
 
-# Strategy 3a: Exact OT with optimal sigma (removes reg artifacts)
+# Strategy 2a: Exact OT with optimal sigma (removes reg artifacts)
 stoch_kdv_rbf_exact_sigma0.1:
   use_ot: true
   ot_method: exact
@@ -343,7 +166,7 @@ stoch_kdv_euclidean_exact:
   ot_kernel: euclidean
   ot_coupling: sample
 
-# Strategy 3b: GP prior tuning for spectral decay
+# Strategy 2b: GP prior tuning for spectral decay
 stoch_kdv_gp_kl0.05_rbf:
   use_ot: true
   ot_method: sinkhorn
@@ -375,7 +198,7 @@ stoch_kdv_gp_kl0.2_euclidean:
   gp_kernel_length: 0.2
   gp_kernel_variance: 0.1
 
-# Strategy 3c: Ultra-low Sinkhorn regularization
+# Strategy 2c: Ultra-low Sinkhorn regularization
 stoch_kdv_euclidean_reg0.001:
   use_ot: true
   ot_method: sinkhorn
@@ -392,7 +215,7 @@ stoch_kdv_rbf_sigma0.5_reg0.001:
   ot_kernel_params:
     sigma: 0.5
 
-# Strategy 3d: RBF with larger sigma (smooth spectral coupling)
+# Strategy 2d: RBF with larger sigma (smooth spectral coupling)
 stoch_kdv_rbf_sigma50_reg0.05:
   use_ot: true
   ot_method: sinkhorn
@@ -411,7 +234,7 @@ stoch_kdv_rbf_sigma100_reg0.05:
   ot_kernel_params:
     sigma: 100.0
 
-# Strategy 3e: Signature kernel (path-based for spectral patterns)
+# Strategy 2e: Signature kernel (path-based for spectral patterns)
 stoch_kdv_sig_order3_reg0.05:
   use_ot: true
   ot_method: sinkhorn
@@ -447,7 +270,7 @@ stoch_kdv_sig_exact_order2:
 
 
 # #############################################################################
-# SECTION 4: Additional Navier-Stokes configs (already winning, push further)
+# SECTION 3: Additional Navier-Stokes configs (already winning, push further)
 # Current best: euclidean_sinkhorn_reg0.5 (0.770 vs DDPM 0.937)
 # Goal: Widen the gap further
 # #############################################################################
@@ -477,7 +300,7 @@ ns_gp_kl0.002_reg0.5:
 
 
 # #############################################################################
-# SECTION 5: Additional Stochastic NS configs (already winning big, push further)
+# SECTION 4: Additional Stochastic NS configs (already winning big, push further)
 # Current best: rbf_sinkhorn_reg0.1 (0.056 vs DDPM 1.87)
 # Goal: Potentially improve further
 # #############################################################################

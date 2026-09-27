@@ -19,7 +19,7 @@ Three scenarios:
 
 3. **Volatility matching** (L2 geometry failure): f = v * BM(t) with
    per-sample volatility v ~ U[0.5, 2]; intended match = similar volatility
-   (the generative factor, as in Heston/rBergomi). For independent Brownian
+   (the generative factor, as in Heston). For independent Brownian
    paths E||f - g||^2 = (v^2 + w^2) * int t dt is *separable* in (v, w): every
    coupling has the same expected cost, so the L2 plan carries no assortative
    signal. The signature kernel measures v through its quadratic-variation

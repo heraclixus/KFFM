@@ -5,7 +5,7 @@ description = "Kernel Functional Flow Matching (kFFM): functional flow matching 
 authors = [
   { name = "Fred Xu", email = "fredxu@cs.ucla.edu" },
   { name = "Thomas Markovich", email = "tmarkovich@squareup.com" },
-  { name = "Barbora Barancikova" },
+  { name = "Barbora Barancikova", email = "b.barancikova23@imperial.ac.uk" },
   { name = "Yizhou Sun", email = "yzsun@cs.ucla.edu" },
 ]
 requires-python = ">=3.9,<3.13"

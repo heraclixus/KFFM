@@ -367,81 +367,6 @@ def format_metric_plain(mean: float, std: float) -> str:
     return f"{mantissa_mean:.2f} ± {mantissa_std:.2f} × 10^{exp}"
 
 
-def compute_trimmed_stats(values: List[float], n_drop: int = 2, drop_best: bool = False) -> Optional[tuple]:
-    """
-    Compute mean ± std after dropping n_drop values.
-    
-    Args:
-        values: List of metric values (lower is better)
-        n_drop: Number of values to drop (default: 2)
-        drop_best: If True, drop the n_drop best (lowest) values.
-                   If False, drop the n_drop worst (highest) values.
-        
-    Returns:
-        (mean, std) of trimmed values, or None if not enough values
-    """
-    # Filter out None and NaN
-    valid_values = [v for v in values if v is not None and not np.isnan(v)]
-    
-    if len(valid_values) <= n_drop:
-        return None
-    
-    # Sort values (ascending: best to worst)
-    sorted_values = sorted(valid_values)
-    
-    if n_drop > 0:
-        if drop_best:
-            # Drop n_drop best (lowest) values - keep the higher ones
-            trimmed_values = sorted_values[n_drop:]
-        else:
-            # Drop n_drop worst (highest) values - keep the lower ones
-            trimmed_values = sorted_values[:-n_drop]
-    else:
-        trimmed_values = sorted_values
-    
-    if len(trimmed_values) == 0:
-        return None
-    
-    return (float(np.mean(trimmed_values)), float(np.std(trimmed_values)))
-
-
-def get_trimmed_metric_value(results: Dict, dataset: str, kernel: str, metric_key: str, n_drop: int = 2, drop_best: bool = False) -> Optional[tuple]:
-    """
-    Get trimmed (mean, std) for a metric from individual seed results.
-    
-    Args:
-        results: Results dictionary
-        dataset: Dataset name
-        kernel: Kernel name
-        metric_key: Metric to compute
-        n_drop: Number of seeds to drop
-        drop_best: If True, drop best seeds (for baseline/N/A kernel).
-                   If False, drop worst seeds (for OT kernels).
-    """
-    if dataset not in results:
-        return None
-    if kernel not in results[dataset]:
-        return None
-    
-    summary = results[dataset][kernel]
-    individual_metrics = summary.get("individual_metrics", [])
-    
-    if not individual_metrics:
-        # Fall back to aggregated if no individual metrics
-        aggregated = summary.get("aggregated_metrics", {})
-        if metric_key not in aggregated:
-            return None
-        return (aggregated[metric_key]["mean"], aggregated[metric_key]["std"])
-    
-    # Extract metric values from each seed
-    values = []
-    for seed_metrics in individual_metrics:
-        if metric_key in seed_metrics and seed_metrics[metric_key] is not None:
-            values.append(seed_metrics[metric_key])
-    
-    return compute_trimmed_stats(values, n_drop, drop_best)
-
-
 def get_metric_value(results: Dict, dataset: str, kernel: str, metric_key: str) -> Optional[tuple]:
     """Get (mean, std) for a metric from results."""
     if dataset not in results:
@@ -458,8 +383,7 @@ def get_metric_value(results: Dict, dataset: str, kernel: str, metric_key: str) 
     return (aggregated[metric_key]["mean"], aggregated[metric_key]["std"])
 
 
-def get_best_kffm_metric(results: Dict, dataset: str, metric_key: str, 
-                         use_trimmed: bool = False, n_drop: int = 2) -> Optional[tuple]:
+def get_best_kffm_metric(results: Dict, dataset: str, metric_key: str) -> Optional[tuple]:
     """
     Get the best (lowest) metric value among OT kernels (signature, rbf, euclidean)
     for a SPECIFIC metric.
@@ -472,8 +396,6 @@ def get_best_kffm_metric(results: Dict, dataset: str, metric_key: str,
         results: Results dictionary
         dataset: Dataset name
         metric_key: The specific metric to find the best value for
-        use_trimmed: Whether to use trimmed statistics
-        n_drop: Number of seeds to drop when trimming
     
     Returns:
         (mean, std, kernel_name) for the best performing OT kernel on this metric, or None
@@ -484,10 +406,7 @@ def get_best_kffm_metric(results: Dict, dataset: str, metric_key: str,
     best_kernel = None
     
     for kernel in ot_kernels:
-        if use_trimmed:
-            result = get_trimmed_metric_value(results, dataset, kernel, metric_key, n_drop, drop_best=False)
-        else:
-            result = get_metric_value(results, dataset, kernel, metric_key)
+        result = get_metric_value(results, dataset, kernel, metric_key)
         
         if result and result[0] < best_mean:
             best_mean = result[0]
@@ -499,7 +418,7 @@ def get_best_kffm_metric(results: Dict, dataset: str, metric_key: str,
     return None
 
 
-def find_best_values(results: Dict, datasets: List[str], metric_key: str, use_trimmed: bool = False, n_drop: int = 2) -> Dict[str, tuple]:
+def find_best_values(results: Dict, datasets: List[str], metric_key: str) -> Dict[str, tuple]:
     """
     Find best and second-best values for each dataset.
     
@@ -507,10 +426,6 @@ def find_best_values(results: Dict, datasets: List[str], metric_key: str, use_tr
         results: Results dictionary
         datasets: List of dataset names
         metric_key: Metric to compare
-        use_trimmed: If True, use trimmed statistics
-                     - For "none" kernel: drop n_drop best seeds
-                     - For OT kernels: drop n_drop worst seeds
-        n_drop: Number of seeds to drop when use_trimmed=True
     
     Returns:
         {dataset: (best_kernel, second_best_kernel)}
@@ -523,18 +438,10 @@ def find_best_values(results: Dict, datasets: List[str], metric_key: str, use_tr
         
         values = []
         for kernel, summary in results[dataset].items():
-            if use_trimmed:
-                # For "none" kernel (N/A), drop best seeds; for OT kernels, drop worst
-                drop_best = (kernel == "none")
-                result = get_trimmed_metric_value(results, dataset, kernel, metric_key, n_drop, drop_best)
-                if result:
-                    mean, _ = result
-                    values.append((kernel, mean))
-            else:
-                aggregated = summary.get("aggregated_metrics", {})
-                if metric_key in aggregated:
-                    mean = aggregated[metric_key]["mean"]
-                    values.append((kernel, mean))
+            aggregated = summary.get("aggregated_metrics", {})
+            if metric_key in aggregated:
+                mean = aggregated[metric_key]["mean"]
+                values.append((kernel, mean))
         
         if len(values) >= 2:
             sorted_values = sorted(values, key=lambda x: x[1])
@@ -549,16 +456,13 @@ def find_best_values(results: Dict, datasets: List[str], metric_key: str, use_tr
 # Table Generation
 # =============================================================================
 
-def generate_console_table_kernel(results: Dict, datasets: List[str], is_pde: bool = True, 
-                                   use_trimmed: bool = False, n_drop: int = 2):
+def generate_console_table_kernel(results: Dict, datasets: List[str], is_pde: bool = True):
     """Generate a formatted console table for OT kernel comparison (no diffusion baselines).
     
     Args:
         results: Results dictionary
         datasets: List of dataset names
         is_pde: If True, use PDE metrics; otherwise use sequence metrics
-        use_trimmed: If True, use trimmed statistics
-        n_drop: Number of seeds to drop
     """
     if is_pde:
         metrics = [("mean_mse", "Mean MSE"), ("variance_mse", "Var MSE"), ("spectrum_mse_log", "Spectrum")]
@@ -568,8 +472,6 @@ def generate_console_table_kernel(results: Dict, datasets: List[str], is_pde: bo
         title = "SEQUENCE DATASETS - OT Kernel Comparison"
     
     print("\n" + "=" * 100)
-    if use_trimmed:
-        title += f" (trimmed: OT drop worst {n_drop}, baseline drop best {n_drop})"
     title += " (mean ± std)"
     print(title)
     print("=" * 100)
@@ -607,36 +509,21 @@ def generate_console_table_kernel(results: Dict, datasets: List[str], is_pde: bo
             print(f"{kernel_display:<12}", end="")
             
             for metric_key, _ in metrics:
-                if use_trimmed:
-                    drop_best = (kernel == "none")
-                    result = get_trimmed_metric_value(results, dataset, kernel, metric_key, n_drop, drop_best)
-                    if result:
-                        mean, std = result
-                        formatted = format_metric_plain(mean, std)
-                        print(f"{formatted:<30}", end="")
-                    else:
-                        print(f"{'N/A':<30}", end="")
+                aggregated = summary.get("aggregated_metrics", {})
+                if metric_key in aggregated:
+                    mean = aggregated[metric_key]["mean"]
+                    std = aggregated[metric_key]["std"]
+                    formatted = format_metric_plain(mean, std)
+                    print(f"{formatted:<30}", end="")
                 else:
-                    aggregated = summary.get("aggregated_metrics", {})
-                    if metric_key in aggregated:
-                        mean = aggregated[metric_key]["mean"]
-                        std = aggregated[metric_key]["std"]
-                        formatted = format_metric_plain(mean, std)
-                        print(f"{formatted:<30}", end="")
-                    else:
-                        print(f"{'N/A':<30}", end="")
+                    print(f"{'N/A':<30}", end="")
             
-            if use_trimmed:
-                effective_seeds = max(0, int(n_seeds) - n_drop) if isinstance(n_seeds, int) else "?"
-                print(f"{effective_seeds:<8}")
-            else:
-                print(f"{n_seeds:<8}")
+            print(f"{n_seeds:<8}")
         
         print("-" * 100)
 
 
-def generate_console_table_baseline(results: Dict, datasets: List[str], is_pde: bool = True,
-                                     use_trimmed: bool = False, n_drop: int = 2):
+def generate_console_table_baseline(results: Dict, datasets: List[str], is_pde: bool = True):
     """Generate a formatted console table for baseline model comparison.
     
     Compares: NCSN, DDPM, GANO (if 2D), FFM (no OT), k-FFM (best OT kernel per metric)
@@ -648,8 +535,6 @@ def generate_console_table_baseline(results: Dict, datasets: List[str], is_pde: 
         results: Results dictionary
         datasets: List of dataset names
         is_pde: If True, use PDE metrics; otherwise use sequence metrics
-        use_trimmed: If True, use trimmed statistics
-        n_drop: Number of seeds to drop
     """
     if is_pde:
         metrics = [("mean_mse", "Mean MSE"), ("variance_mse", "Var MSE"), ("spectrum_mse_log", "Spectrum")]
@@ -659,8 +544,6 @@ def generate_console_table_baseline(results: Dict, datasets: List[str], is_pde: 
         title = "SEQUENCE DATASETS - Baseline Model Comparison"
     
     print("\n" + "=" * 100)
-    if use_trimmed:
-        title += f" (trimmed: OT drop worst {n_drop}, baselines drop best {n_drop})"
     title += " (mean ± std)"
     print(title)
     print("=" * 100)
@@ -715,7 +598,7 @@ def generate_console_table_baseline(results: Dict, datasets: List[str], is_pde: 
             for metric_key, _ in metrics:
                 if model_key == "k-ffm":
                     # Get best among OT kernels
-                    result = get_best_kffm_metric(results, dataset, metric_key, use_trimmed, n_drop)
+                    result = get_best_kffm_metric(results, dataset, metric_key)
                     if result:
                         mean, std, _ = result
                         formatted = format_metric_plain(mean, std)
@@ -723,65 +606,42 @@ def generate_console_table_baseline(results: Dict, datasets: List[str], is_pde: 
                     else:
                         print(f"{'N/A':<30}", end="")
                 else:
-                    if use_trimmed:
-                        # For baseline models (FFM, DDPM, NCSN, GANO), drop best seeds for conservative estimate
-                        # This gives baselines their "worst case" while k-FFM gets its "best case"
-                        drop_best = (model_key in ["none", "ddpm", "ncsn", "gano"])
-                        result = get_trimmed_metric_value(results, dataset, model_key, metric_key, n_drop, drop_best)
-                        if result:
-                            mean, std = result
-                            formatted = format_metric_plain(mean, std)
-                            print(f"{formatted:<30}", end="")
-                        else:
-                            print(f"{'N/A':<30}", end="")
+                    summary = results[dataset].get(model_key, {})
+                    aggregated = summary.get("aggregated_metrics", {})
+                    if metric_key in aggregated:
+                        mean = aggregated[metric_key]["mean"]
+                        std = aggregated[metric_key]["std"]
+                        formatted = format_metric_plain(mean, std)
+                        print(f"{formatted:<30}", end="")
                     else:
-                        summary = results[dataset].get(model_key, {})
-                        aggregated = summary.get("aggregated_metrics", {})
-                        if metric_key in aggregated:
-                            mean = aggregated[metric_key]["mean"]
-                            std = aggregated[metric_key]["std"]
-                            formatted = format_metric_plain(mean, std)
-                            print(f"{formatted:<30}", end="")
-                        else:
-                            print(f"{'N/A':<30}", end="")
+                        print(f"{'N/A':<30}", end="")
             
             print()
         
         print("-" * 100)
 
 
-def generate_latex_table_kernel(results: Dict, datasets: List[str], is_pde: bool = True, 
-                                 use_trimmed: bool = False, n_drop: int = 2) -> str:
+def generate_latex_table_kernel(results: Dict, datasets: List[str], is_pde: bool = True) -> str:
     """Generate a LaTeX table for OT kernel comparison (no diffusion baselines).
     
     Args:
         results: Results dictionary
         datasets: List of dataset names
         is_pde: If True, use PDE metrics; otherwise use sequence metrics
-        use_trimmed: If True, use trimmed statistics
-        n_drop: Number of seeds to drop
     """
     if is_pde:
         metrics = [("mean_mse", "Mean"), ("variance_mse", "Variance"), ("spectrum_mse_log", "Spectrum (log)")]
-        if use_trimmed:
-            caption = f"OT kernel comparison for PDE datasets (trimmed). Lower is better. Best is \\textcolor{{ForestGreen}}{{$\\mathbf{{green}}$}}, second best is \\textcolor{{Orange}}{{$\\mathbf{{orange}}$}}."
-            label = "tab:pde_kernel_seeded_trimmed"
-        else:
-            caption = "OT kernel comparison for PDE datasets (mean $\\pm$ std over 10 seeds). Lower is better. Best is \\textcolor{ForestGreen}{$\\mathbf{green}$}, second best is \\textcolor{Orange}{$\\mathbf{orange}$}."
-            label = "tab:pde_kernel_seeded"
+        caption = "OT kernel comparison for PDE datasets (mean $\\pm$ std over 10 seeds). Lower is better. Best is \\textcolor{ForestGreen}{$\\mathbf{green}$}, second best is \\textcolor{Orange}{$\\mathbf{orange}$}."
+        label = "tab:pde_kernel_seeded"
     else:
         metrics = [("mean_mse", "Mean"), ("variance_mse", "Variance"), ("autocorrelation_mse", "Autocorr.")]
-        if use_trimmed:
-            caption = f"OT kernel comparison for sequence datasets (trimmed). Lower is better. Best is \\textcolor{{ForestGreen}}{{$\\mathbf{{green}}$}}, second best is \\textcolor{{Orange}}{{$\\mathbf{{orange}}$}}."
-            label = "tab:sequence_kernel_seeded_trimmed"
-        else:
-            caption = "OT kernel comparison for sequence datasets (mean $\\pm$ std over 10 seeds). Lower is better. Best is \\textcolor{ForestGreen}{$\\mathbf{green}$}, second best is \\textcolor{Orange}{$\\mathbf{orange}$}."
-            label = "tab:sequence_kernel_seeded"
+        caption = "OT kernel comparison for sequence datasets (mean $\\pm$ std over 10 seeds). Lower is better. Best is \\textcolor{ForestGreen}{$\\mathbf{green}$}, second best is \\textcolor{Orange}{$\\mathbf{orange}$}."
+        label = "tab:sequence_kernel_seeded"
     
     # Find best values for highlighting among OT kernels only
     best_by_metric = {}
     for metric_key, _ in metrics:
-        best_by_metric[metric_key] = find_best_values_kernel(results, datasets, metric_key, use_trimmed, n_drop)
+        best_by_metric[metric_key] = find_best_values_kernel(results, datasets, metric_key)
     
     lines = [
         r"\begin{table}[t]",
@@ -820,23 +680,14 @@ def generate_latex_table_kernel(results: Dict, datasets: List[str], is_pde: bool
             row = [f" & {kernel_display}"]
             
             for metric_key, _ in metrics:
-                if use_trimmed:
-                    drop_best = (kernel == "none")
-                    result = get_trimmed_metric_value(results, dataset, kernel, metric_key, n_drop, drop_best)
-                    if result:
-                        mean, std = result
-                    else:
-                        row.append("--")
-                        continue
+                summary = results[dataset][kernel]
+                aggregated = summary.get("aggregated_metrics", {})
+                if metric_key in aggregated:
+                    mean = aggregated[metric_key]["mean"]
+                    std = aggregated[metric_key]["std"]
                 else:
-                    summary = results[dataset][kernel]
-                    aggregated = summary.get("aggregated_metrics", {})
-                    if metric_key in aggregated:
-                        mean = aggregated[metric_key]["mean"]
-                        std = aggregated[metric_key]["std"]
-                    else:
-                        row.append("--")
-                        continue
+                    row.append("--")
+                    continue
                 
                 # Check if best or second best
                 is_best = False
@@ -866,8 +717,7 @@ def generate_latex_table_kernel(results: Dict, datasets: List[str], is_pde: bool
     return "\n".join(lines)
 
 
-def generate_latex_table_baseline(results: Dict, datasets: List[str], is_pde: bool = True,
-                                   use_trimmed: bool = False, n_drop: int = 2) -> str:
+def generate_latex_table_baseline(results: Dict, datasets: List[str], is_pde: bool = True) -> str:
     """Generate a LaTeX table for baseline model comparison.
     
     Compares: NCSN, DDPM, GANO (if 2D), FFM (no OT), k-FFM (best OT kernel per metric)
@@ -881,30 +731,20 @@ def generate_latex_table_baseline(results: Dict, datasets: List[str], is_pde: bo
         results: Results dictionary
         datasets: List of dataset names
         is_pde: If True, use PDE metrics; otherwise use sequence metrics
-        use_trimmed: If True, use trimmed statistics
-        n_drop: Number of seeds to drop
     """
     if is_pde:
         metrics = [("mean_mse", "Mean"), ("variance_mse", "Variance"), ("spectrum_mse_log", "Spectrum (log)")]
-        if use_trimmed:
-            caption = f"Baseline model comparison for PDE datasets (trimmed). Lower is better. Best is \\textcolor{{ForestGreen}}{{$\\mathbf{{green}}$}}, second best is \\textcolor{{Orange}}{{$\\mathbf{{orange}}$}}."
-            label = "tab:pde_baseline_seeded_trimmed"
-        else:
-            caption = "Baseline model comparison for PDE datasets (mean $\\pm$ std over 10 seeds). Lower is better. Best is \\textcolor{ForestGreen}{$\\mathbf{green}$}, second best is \\textcolor{Orange}{$\\mathbf{orange}$}."
-            label = "tab:pde_baseline_seeded"
+        caption = "Baseline model comparison for PDE datasets (mean $\\pm$ std over 10 seeds). Lower is better. Best is \\textcolor{ForestGreen}{$\\mathbf{green}$}, second best is \\textcolor{Orange}{$\\mathbf{orange}$}."
+        label = "tab:pde_baseline_seeded"
     else:
         metrics = [("mean_mse", "Mean"), ("variance_mse", "Variance"), ("autocorrelation_mse", "Autocorr.")]
-        if use_trimmed:
-            caption = f"Baseline model comparison for sequence datasets (trimmed). Lower is better. Best is \\textcolor{{ForestGreen}}{{$\\mathbf{{green}}$}}, second best is \\textcolor{{Orange}}{{$\\mathbf{{orange}}$}}."
-            label = "tab:sequence_baseline_seeded_trimmed"
-        else:
-            caption = "Baseline model comparison for sequence datasets (mean $\\pm$ std over 10 seeds). Lower is better. Best is \\textcolor{ForestGreen}{$\\mathbf{green}$}, second best is \\textcolor{Orange}{$\\mathbf{orange}$}."
-            label = "tab:sequence_baseline_seeded"
+        caption = "Baseline model comparison for sequence datasets (mean $\\pm$ std over 10 seeds). Lower is better. Best is \\textcolor{ForestGreen}{$\\mathbf{green}$}, second best is \\textcolor{Orange}{$\\mathbf{orange}$}."
+        label = "tab:sequence_baseline_seeded"
     
     # Find best values for highlighting among baseline models
     best_by_metric = {}
     for metric_key, _ in metrics:
-        best_by_metric[metric_key] = find_best_values_baseline(results, datasets, metric_key, use_trimmed, n_drop)
+        best_by_metric[metric_key] = find_best_values_baseline(results, datasets, metric_key)
     
     lines = [
         r"\begin{table}[t]",
@@ -965,31 +805,21 @@ def generate_latex_table_baseline(results: Dict, datasets: List[str], is_pde: bo
             for metric_key, _ in metrics:
                 if model_key == "k-ffm":
                     # Get best among OT kernels
-                    result = get_best_kffm_metric(results, dataset, metric_key, use_trimmed, n_drop)
+                    result = get_best_kffm_metric(results, dataset, metric_key)
                     if result:
                         mean, std, _ = result
                     else:
                         row.append("--")
                         continue
                 else:
-                    if use_trimmed:
-                        # For baseline models (FFM, DDPM, NCSN, GANO), drop best seeds for conservative estimate
-                        drop_best = (model_key in ["none", "ddpm", "ncsn", "gano"])
-                        result = get_trimmed_metric_value(results, dataset, model_key, metric_key, n_drop, drop_best)
-                        if result:
-                            mean, std = result
-                        else:
-                            row.append("--")
-                            continue
+                    summary = results[dataset].get(model_key, {})
+                    aggregated = summary.get("aggregated_metrics", {})
+                    if metric_key in aggregated:
+                        mean = aggregated[metric_key]["mean"]
+                        std = aggregated[metric_key]["std"]
                     else:
-                        summary = results[dataset].get(model_key, {})
-                        aggregated = summary.get("aggregated_metrics", {})
-                        if metric_key in aggregated:
-                            mean = aggregated[metric_key]["mean"]
-                            std = aggregated[metric_key]["std"]
-                        else:
-                            row.append("--")
-                            continue
+                        row.append("--")
+                        continue
                 
                 # Check if best or second best
                 is_best = False
@@ -1024,8 +854,7 @@ def generate_latex_table_baseline(results: Dict, datasets: List[str], is_pde: bo
     return "\n".join(lines)
 
 
-def generate_console_table_sequence_full(results: Dict, datasets: List[str],
-                                          use_trimmed: bool = False, n_drop: int = 2):
+def generate_console_table_sequence_full(results: Dict, datasets: List[str]):
     """Generate a formatted console table for sequence datasets with ALL metrics.
     
     Includes: Mean MSE, Variance MSE, Autocorrelation MSE, Skewness MSE, Kurtosis MSE
@@ -1033,8 +862,6 @@ def generate_console_table_sequence_full(results: Dict, datasets: List[str],
     Args:
         results: Results dictionary
         datasets: List of dataset names
-        use_trimmed: If True, use trimmed statistics
-        n_drop: Number of seeds to drop
     """
     metrics = [
         ("mean_mse", "Mean MSE"),
@@ -1046,8 +873,6 @@ def generate_console_table_sequence_full(results: Dict, datasets: List[str],
     title = "SEQUENCE DATASETS - Full Metrics (All Models)"
     
     print("\n" + "=" * 140)
-    if use_trimmed:
-        title += f" (trimmed: OT drop worst {n_drop}, baseline drop best {n_drop})"
     title += " (mean ± std)"
     print(title)
     print("=" * 140)
@@ -1096,34 +921,22 @@ def generate_console_table_sequence_full(results: Dict, datasets: List[str],
             print(f"{model_name:<12}", end="")
             
             for metric_key, _ in metrics:
-                if use_trimmed:
-                    # For baseline models (FFM, DDPM, NCSN, GANO), drop best seeds for conservative estimate
-                    drop_best = (model_key in ["none", "ddpm", "ncsn", "gano"])
-                    result = get_trimmed_metric_value(results, dataset, model_key, metric_key, n_drop, drop_best)
-                    if result:
-                        mean, std = result
-                        formatted = format_metric_plain(mean, std)
-                        print(f"{formatted:<25}", end="")
-                    else:
-                        print(f"{'N/A':<25}", end="")
+                summary = results[dataset].get(model_key, {})
+                aggregated = summary.get("aggregated_metrics", {})
+                if metric_key in aggregated:
+                    mean = aggregated[metric_key]["mean"]
+                    std = aggregated[metric_key]["std"]
+                    formatted = format_metric_plain(mean, std)
+                    print(f"{formatted:<25}", end="")
                 else:
-                    summary = results[dataset].get(model_key, {})
-                    aggregated = summary.get("aggregated_metrics", {})
-                    if metric_key in aggregated:
-                        mean = aggregated[metric_key]["mean"]
-                        std = aggregated[metric_key]["std"]
-                        formatted = format_metric_plain(mean, std)
-                        print(f"{formatted:<25}", end="")
-                    else:
-                        print(f"{'N/A':<25}", end="")
+                    print(f"{'N/A':<25}", end="")
             
             print()
         
         print("-" * 140)
 
 
-def generate_latex_table_sequence_full(results: Dict, datasets: List[str],
-                                        use_trimmed: bool = False, n_drop: int = 2) -> str:
+def generate_latex_table_sequence_full(results: Dict, datasets: List[str]) -> str:
     """Generate a LaTeX table for sequence datasets with ALL metrics.
     
     Includes: Mean MSE, Variance MSE, Autocorrelation MSE, Skewness MSE, Kurtosis MSE
@@ -1132,8 +945,6 @@ def generate_latex_table_sequence_full(results: Dict, datasets: List[str],
     Args:
         results: Results dictionary
         datasets: List of dataset names
-        use_trimmed: If True, use trimmed statistics
-        n_drop: Number of seeds to drop
     """
     metrics = [
         ("mean_mse", "Mean"),
@@ -1143,17 +954,13 @@ def generate_latex_table_sequence_full(results: Dict, datasets: List[str],
         ("kurtosis_mse", "Kurtosis"),
     ]
     
-    if use_trimmed:
-        caption = f"Full metrics comparison for sequence datasets (trimmed). Lower is better. Best is \\textcolor{{ForestGreen}}{{$\\mathbf{{green}}$}}, second best is \\textcolor{{Orange}}{{$\\mathbf{{orange}}$}}."
-        label = "tab:sequence_full_seeded_trimmed"
-    else:
-        caption = "Full metrics comparison for sequence datasets (mean $\\pm$ std over 10 seeds). Lower is better. Best is \\textcolor{ForestGreen}{$\\mathbf{green}$}, second best is \\textcolor{Orange}{$\\mathbf{orange}$}."
-        label = "tab:sequence_full_seeded"
+    caption = "Full metrics comparison for sequence datasets (mean $\\pm$ std over 10 seeds). Lower is better. Best is \\textcolor{ForestGreen}{$\\mathbf{green}$}, second best is \\textcolor{Orange}{$\\mathbf{orange}$}."
+    label = "tab:sequence_full_seeded"
     
     # Find best values for highlighting
     best_by_metric = {}
     for metric_key, _ in metrics:
-        best_by_metric[metric_key] = find_best_values_baseline(results, datasets, metric_key, use_trimmed, n_drop)
+        best_by_metric[metric_key] = find_best_values_baseline(results, datasets, metric_key)
     
     lines = [
         r"\begin{table}[t]",
@@ -1205,31 +1012,21 @@ def generate_latex_table_sequence_full(results: Dict, datasets: List[str],
             
             for metric_key, _ in metrics:
                 if model_key == "k-ffm":
-                    result = get_best_kffm_metric(results, dataset, metric_key, use_trimmed, n_drop)
+                    result = get_best_kffm_metric(results, dataset, metric_key)
                     if result:
                         mean, std, _ = result
                     else:
                         row.append("--")
                         continue
                 else:
-                    if use_trimmed:
-                        # For baseline models (FFM, DDPM, NCSN, GANO), drop best seeds for conservative estimate
-                        drop_best = (model_key in ["none", "ddpm", "ncsn", "gano"])
-                        result = get_trimmed_metric_value(results, dataset, model_key, metric_key, n_drop, drop_best)
-                        if result:
-                            mean, std = result
-                        else:
-                            row.append("--")
-                            continue
+                    summary = results[dataset].get(model_key, {})
+                    aggregated = summary.get("aggregated_metrics", {})
+                    if metric_key in aggregated:
+                        mean = aggregated[metric_key]["mean"]
+                        std = aggregated[metric_key]["std"]
                     else:
-                        summary = results[dataset].get(model_key, {})
-                        aggregated = summary.get("aggregated_metrics", {})
-                        if metric_key in aggregated:
-                            mean = aggregated[metric_key]["mean"]
-                            std = aggregated[metric_key]["std"]
-                        else:
-                            row.append("--")
-                            continue
+                        row.append("--")
+                        continue
                 
                 # Check if best or second best
                 is_best = False
@@ -1264,8 +1061,7 @@ def generate_latex_table_sequence_full(results: Dict, datasets: List[str],
     return "\n".join(lines)
 
 
-def find_best_values_kernel(results: Dict, datasets: List[str], metric_key: str, 
-                            use_trimmed: bool = False, n_drop: int = 2) -> Dict[str, tuple]:
+def find_best_values_kernel(results: Dict, datasets: List[str], metric_key: str) -> Dict[str, tuple]:
     """Find best and second-best values among OT kernels only."""
     best_values = {}
     
@@ -1278,18 +1074,11 @@ def find_best_values_kernel(results: Dict, datasets: List[str], metric_key: str,
             if kernel not in results[dataset]:
                 continue
             
-            if use_trimmed:
-                drop_best = (kernel == "none")
-                result = get_trimmed_metric_value(results, dataset, kernel, metric_key, n_drop, drop_best)
-                if result:
-                    mean, _ = result
-                    values.append((kernel, mean))
-            else:
-                summary = results[dataset][kernel]
-                aggregated = summary.get("aggregated_metrics", {})
-                if metric_key in aggregated:
-                    mean = aggregated[metric_key]["mean"]
-                    values.append((kernel, mean))
+            summary = results[dataset][kernel]
+            aggregated = summary.get("aggregated_metrics", {})
+            if metric_key in aggregated:
+                mean = aggregated[metric_key]["mean"]
+                values.append((kernel, mean))
         
         if len(values) >= 2:
             sorted_values = sorted(values, key=lambda x: x[1])
@@ -1300,8 +1089,7 @@ def find_best_values_kernel(results: Dict, datasets: List[str], metric_key: str,
     return best_values
 
 
-def find_best_values_baseline(results: Dict, datasets: List[str], metric_key: str,
-                               use_trimmed: bool = False, n_drop: int = 2) -> Dict[str, tuple]:
+def find_best_values_baseline(results: Dict, datasets: List[str], metric_key: str) -> Dict[str, tuple]:
     """Find best and second-best values among baseline models (FFM, k-FFM, DDPM, NCSN, GANO)."""
     best_values = {}
     
@@ -1313,56 +1101,36 @@ def find_best_values_baseline(results: Dict, datasets: List[str], metric_key: st
         
         # FFM (none)
         if "none" in results[dataset]:
-            if use_trimmed:
-                result = get_trimmed_metric_value(results, dataset, "none", metric_key, n_drop, drop_best=True)
-                if result:
-                    values.append(("none", result[0]))
-            else:
-                summary = results[dataset]["none"]
-                aggregated = summary.get("aggregated_metrics", {})
-                if metric_key in aggregated:
-                    values.append(("none", aggregated[metric_key]["mean"]))
+            summary = results[dataset]["none"]
+            aggregated = summary.get("aggregated_metrics", {})
+            if metric_key in aggregated:
+                values.append(("none", aggregated[metric_key]["mean"]))
         
         # k-FFM
-        result = get_best_kffm_metric(results, dataset, metric_key, use_trimmed, n_drop)
+        result = get_best_kffm_metric(results, dataset, metric_key)
         if result:
             values.append(("k-ffm", result[0]))
         
-        # DDPM - drop best seeds for conservative baseline estimate
+        # DDPM
         if "ddpm" in results[dataset]:
-            if use_trimmed:
-                result = get_trimmed_metric_value(results, dataset, "ddpm", metric_key, n_drop, drop_best=True)
-                if result:
-                    values.append(("ddpm", result[0]))
-            else:
-                summary = results[dataset]["ddpm"]
-                aggregated = summary.get("aggregated_metrics", {})
-                if metric_key in aggregated:
-                    values.append(("ddpm", aggregated[metric_key]["mean"]))
+            summary = results[dataset]["ddpm"]
+            aggregated = summary.get("aggregated_metrics", {})
+            if metric_key in aggregated:
+                values.append(("ddpm", aggregated[metric_key]["mean"]))
         
-        # NCSN - drop best seeds for conservative baseline estimate
+        # NCSN
         if "ncsn" in results[dataset]:
-            if use_trimmed:
-                result = get_trimmed_metric_value(results, dataset, "ncsn", metric_key, n_drop, drop_best=True)
-                if result:
-                    values.append(("ncsn", result[0]))
-            else:
-                summary = results[dataset]["ncsn"]
-                aggregated = summary.get("aggregated_metrics", {})
-                if metric_key in aggregated:
-                    values.append(("ncsn", aggregated[metric_key]["mean"]))
+            summary = results[dataset]["ncsn"]
+            aggregated = summary.get("aggregated_metrics", {})
+            if metric_key in aggregated:
+                values.append(("ncsn", aggregated[metric_key]["mean"]))
         
-        # GANO (2D datasets only) - drop best seeds for conservative baseline estimate
+        # GANO (2D datasets only)
         if "gano" in results[dataset]:
-            if use_trimmed:
-                result = get_trimmed_metric_value(results, dataset, "gano", metric_key, n_drop, drop_best=True)
-                if result:
-                    values.append(("gano", result[0]))
-            else:
-                summary = results[dataset]["gano"]
-                aggregated = summary.get("aggregated_metrics", {})
-                if metric_key in aggregated:
-                    values.append(("gano", aggregated[metric_key]["mean"]))
+            summary = results[dataset]["gano"]
+            aggregated = summary.get("aggregated_metrics", {})
+            if metric_key in aggregated:
+                values.append(("gano", aggregated[metric_key]["mean"]))
         
         if len(values) >= 2:
             sorted_values = sorted(values, key=lambda x: x[1])
@@ -1428,10 +1196,6 @@ def main():
                         help='Generate LaTeX tables')
     parser.add_argument('--json', action='store_true',
                         help='Generate JSON summary')
-    parser.add_argument('--trimmed', action='store_true',
-                        help='Use trimmed statistics: OT kernels drop worst n seeds, baselines (FFM, DDPM, NCSN, GANO) drop best n seeds')
-    parser.add_argument('--n-drop', type=int, default=2,
-                        help='Number of seeds to drop when using --trimmed (default: 2)')
     
     args = parser.parse_args()
     
@@ -1440,8 +1204,6 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"Scanning: {input_dir}")
-    if args.trimmed:
-        print(f"Using trimmed statistics: OT kernels drop worst {args.n_drop}, baselines (FFM, DDPM, NCSN, GANO) drop best {args.n_drop}")
     print("-" * 50)
     
     results = find_all_results(input_dir)
@@ -1460,12 +1222,10 @@ def main():
     print("=" * 100)
     
     if pde_results:
-        generate_console_table_kernel(pde_results, PDE_DATASETS, is_pde=True, 
-                                       use_trimmed=args.trimmed, n_drop=args.n_drop)
+        generate_console_table_kernel(pde_results, PDE_DATASETS, is_pde=True)
     
     if seq_results:
-        generate_console_table_kernel(seq_results, SEQUENCE_DATASETS, is_pde=False,
-                                       use_trimmed=args.trimmed, n_drop=args.n_drop)
+        generate_console_table_kernel(seq_results, SEQUENCE_DATASETS, is_pde=False)
     
     # Generate console tables - Baseline comparison (NCSN, DDPM, GANO, FFM, k-FFM)
     print("\n" + "=" * 100)
@@ -1473,64 +1233,55 @@ def main():
     print("=" * 100)
     
     if pde_results:
-        generate_console_table_baseline(pde_results, PDE_DATASETS, is_pde=True,
-                                         use_trimmed=args.trimmed, n_drop=args.n_drop)
+        generate_console_table_baseline(pde_results, PDE_DATASETS, is_pde=True)
     
     if seq_results:
-        generate_console_table_baseline(seq_results, SEQUENCE_DATASETS, is_pde=False,
-                                         use_trimmed=args.trimmed, n_drop=args.n_drop)
+        generate_console_table_baseline(seq_results, SEQUENCE_DATASETS, is_pde=False)
     
     # Generate console tables - Full sequence metrics (Mean, Variance, Autocorr, Skewness, Kurtosis)
     if seq_results:
-        generate_console_table_sequence_full(seq_results, SEQUENCE_DATASETS,
-                                              use_trimmed=args.trimmed, n_drop=args.n_drop)
+        generate_console_table_sequence_full(seq_results, SEQUENCE_DATASETS)
     
     # Generate LaTeX tables
     if args.latex or True:  # Always generate LaTeX
-        suffix = "_trimmed" if args.trimmed else ""
         
         print("\n" + "-" * 50)
         print("Generating LaTeX tables...")
         
         # Kernel comparison tables
         if pde_results:
-            latex_pde_kernel = generate_latex_table_kernel(pde_results, PDE_DATASETS, is_pde=True,
-                                                           use_trimmed=args.trimmed, n_drop=args.n_drop)
-            latex_path = output_dir / f"table_pde_kernel_seeded{suffix}.tex"
+            latex_pde_kernel = generate_latex_table_kernel(pde_results, PDE_DATASETS, is_pde=True)
+            latex_path = output_dir / "table_pde_kernel_seeded.tex"
             with open(latex_path, 'w') as f:
                 f.write(latex_pde_kernel)
             print(f"  Kernel table (PDE): {latex_path}")
         
         if seq_results:
-            latex_seq_kernel = generate_latex_table_kernel(seq_results, SEQUENCE_DATASETS, is_pde=False,
-                                                           use_trimmed=args.trimmed, n_drop=args.n_drop)
-            latex_path = output_dir / f"table_sequence_kernel_seeded{suffix}.tex"
+            latex_seq_kernel = generate_latex_table_kernel(seq_results, SEQUENCE_DATASETS, is_pde=False)
+            latex_path = output_dir / "table_sequence_kernel_seeded.tex"
             with open(latex_path, 'w') as f:
                 f.write(latex_seq_kernel)
             print(f"  Kernel table (Sequence): {latex_path}")
         
         # Baseline comparison tables
         if pde_results:
-            latex_pde_baseline = generate_latex_table_baseline(pde_results, PDE_DATASETS, is_pde=True,
-                                                                use_trimmed=args.trimmed, n_drop=args.n_drop)
-            latex_path = output_dir / f"table_pde_baseline_seeded{suffix}.tex"
+            latex_pde_baseline = generate_latex_table_baseline(pde_results, PDE_DATASETS, is_pde=True)
+            latex_path = output_dir / "table_pde_baseline_seeded.tex"
             with open(latex_path, 'w') as f:
                 f.write(latex_pde_baseline)
             print(f"  Baseline table (PDE): {latex_path}")
         
         if seq_results:
-            latex_seq_baseline = generate_latex_table_baseline(seq_results, SEQUENCE_DATASETS, is_pde=False,
-                                                                use_trimmed=args.trimmed, n_drop=args.n_drop)
-            latex_path = output_dir / f"table_sequence_baseline_seeded{suffix}.tex"
+            latex_seq_baseline = generate_latex_table_baseline(seq_results, SEQUENCE_DATASETS, is_pde=False)
+            latex_path = output_dir / "table_sequence_baseline_seeded.tex"
             with open(latex_path, 'w') as f:
                 f.write(latex_seq_baseline)
             print(f"  Baseline table (Sequence): {latex_path}")
         
         # Full sequence metrics table (including skewness and kurtosis)
         if seq_results:
-            latex_seq_full = generate_latex_table_sequence_full(seq_results, SEQUENCE_DATASETS,
-                                                                 use_trimmed=args.trimmed, n_drop=args.n_drop)
-            latex_path = output_dir / f"table_sequence_full_seeded{suffix}.tex"
+            latex_seq_full = generate_latex_table_sequence_full(seq_results, SEQUENCE_DATASETS)
+            latex_path = output_dir / "table_sequence_full_seeded.tex"
             with open(latex_path, 'w') as f:
                 f.write(latex_seq_full)
             print(f"  Full metrics table (Sequence): {latex_path}")

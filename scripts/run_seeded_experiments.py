@@ -2459,6 +2459,8 @@ def run_experiment(
         all_metrics = []
         for sub_name, sub_data in setup["datasets"].items():
             print(f"\n  Sub-dataset: {sub_name}")
+            # The sub-datasets have different lengths (69, 69 and 24 time points).
+            setup["n_x"] = sub_data["train_data"].shape[-1]
             for seed in seeds:
                 seed_dir = output_dir / sub_name / f"seed_{seed}"
                 seed_dir.mkdir(parents=True, exist_ok=True)
